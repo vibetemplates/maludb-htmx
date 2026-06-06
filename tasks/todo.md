@@ -29,13 +29,14 @@ Key findings:
 - **DB mismatch**: docs/schema say MySQL/MariaDB, but `config/database.php` points at PostgreSQL (per the partially-completed migration in `tasks/postgres-migration-todo.md`). Template must pick one (or document both).
 - **Tenant naming**: the tenant root table is `restaurants` (with `user_restaurants`). Renaming to something generic (`accounts`) is the "right" template shape but is a large refactor — decision needed.
 
-## Open Decisions (need verification before work starts)
+## Decisions (verified 2026-06-06)
 
-1. **In-place vs. fresh**: strip this repo in place (preserves history/CLAUDE workflow) — recommended — or assemble a clean copy?
-2. **Tenant naming**: keep `restaurants`/`user_restaurants` internally (simple, zero-risk) or rename to `accounts`/`user_accounts` (cleaner template, big refactor)?
-3. **AI integrations** (Retell/Twilio/OpenAI/MCP): remove entirely, or keep as documented optional modules?
-4. **Database target**: PostgreSQL (current config) or MySQL/MariaDB (docs, original schema)?
-5. **Billing/plans/affiliate**: keep billing+plans as template features? Affiliate program seems product-specific — remove?
+1. **In-place**: strip this repo in place. ✔
+2. **Remove**: Restaurant module, Prospects/SalesCoach module, Affiliate module. ✔
+3. **Keep**: Professional module screens (appointments, clients, services, availability, time off). ✔
+4. **Unified screen**: every user gets the same screen regardless of role, product_type, location type, or settings — remove role/product-type branching from the UI. ✔
+5. **Database**: PostgreSQL 17 + MaluDB extensions (per README). ✔
+6. **Deferred**: AI integrations (Retell/Twilio/OpenAI/MCP) keep-vs-remove; tenant table renaming (`restaurants` → ?).
 
 ## Todo Items
 

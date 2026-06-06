@@ -4,58 +4,43 @@ require_once '../helpers/db.php';
 
 requireAuth();
 $user = get_user();
-$restaurantName = $_SESSION['current_restaurant_name'] ?? 'Restaurant';
+$businessName = $_SESSION['current_restaurant_name'] ?? 'My Business';
 $currentRole = $_SESSION['current_role'] ?? '';
-$restaurantPhone = '';
+$businessPhone = '';
 if (!empty($_SESSION['current_restaurant_id'])) {
     $r = getRestaurant($_SESSION['current_restaurant_id']);
     if ($r && !empty($r['phone'])) {
         $digits = preg_replace('/\D/', '', $r['phone']);
         if (strlen($digits) === 10) {
-            $restaurantPhone = '(' . substr($digits, 0, 3) . ') ' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+            $businessPhone = '(' . substr($digits, 0, 3) . ') ' . substr($digits, 3, 3) . '-' . substr($digits, 6);
         } elseif (strlen($digits) === 11 && $digits[0] === '1') {
-            $restaurantPhone = '(' . substr($digits, 1, 3) . ') ' . substr($digits, 4, 3) . '-' . substr($digits, 7);
+            $businessPhone = '(' . substr($digits, 1, 3) . ') ' . substr($digits, 4, 3) . '-' . substr($digits, 7);
         } else {
-            $restaurantPhone = $r['phone'];
+            $businessPhone = $r['phone'];
         }
     }
 }
-$restaurants = getUserRestaurants($user['id']);
-$hasMultipleRestaurants = count($restaurants) > 1;
+$businesses = getUserRestaurants($user['id']);
+$hasMultipleBusinesses = count($businesses) > 1;
 
-// Load user's is_affiliate flag and user_type from DB
-$userDbStmt = db()->prepare("SELECT is_affiliate, user_type FROM users WHERE id = ?");
-$userDbStmt->execute([$user['id']]);
-$userDb = $userDbStmt->fetch(PDO::FETCH_ASSOC);
-$userIsAffiliate = (int)($userDb['is_affiliate'] ?? 0);
-$currentUserType = $userDb['user_type'] ?? 'user';
-
-// Load location_type and status for current restaurant
-$currentLocationType = 'restaurant';
-$currentRestaurantStatus = 'active';
+// Load status for current business
+$currentBusinessStatus = 'active';
 if (!empty($_SESSION['current_restaurant_id'])) {
-    $ltStmt = db()->prepare("SELECT location_type, status FROM restaurants WHERE id = ?");
-    $ltStmt->execute([$_SESSION['current_restaurant_id']]);
-    $ltRow = $ltStmt->fetch(PDO::FETCH_ASSOC);
-    if ($ltRow && !empty($ltRow['location_type'])) {
-        $currentLocationType = $ltRow['location_type'];
-    }
-    if ($ltRow && !empty($ltRow['status'])) {
-        $currentRestaurantStatus = $ltRow['status'];
+    $stStmt = db()->prepare("SELECT status FROM restaurants WHERE id = ?");
+    $stStmt->execute([$_SESSION['current_restaurant_id']]);
+    $stRow = $stStmt->fetch(PDO::FETCH_ASSOC);
+    if ($stRow && !empty($stRow['status'])) {
+        $currentBusinessStatus = $stRow['status'];
     }
 }
 
-$isProfessionalMode = ($currentLocationType === 'professional');
-$isAffiliateMode = ($currentLocationType === 'affiliate');
-$defaultPageContentPath = $isProfessionalMode ? '/partials/professional/dashboard.php' : '/partials/dashboard/index.php';
-$userSettingsPath = $isProfessionalMode ? '/partials/professional/settings.php' : '/partials/settings/profile.php';
-$appMetaDescription = $isProfessionalMode ? 'Professional Scheduling System' : 'Restaurant Reservation System';
-$appTitleSuffix = $isProfessionalMode ? 'Scheduling' : 'Reservations';
-$appFooterLabel = $isProfessionalMode ? 'Drajeo/ZozoCal Scheduling System' : 'Restaurant Reservation System';
-
-// Load permitted nav items from nav_permissions table
-$userPlatformRole = $user['role'] ?? 'user';
-$permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $currentLocationType);
+// Unified template shell: every user gets the same screen and the same
+// navigation regardless of role, product type, or settings.
+$defaultPageContentPath = '/partials/professional/dashboard.php';
+$userSettingsPath = '/partials/professional/settings.php';
+$appMetaDescription = 'MaluDB Design Template';
+$appTitleSuffix = 'MaluDB Template';
+$appFooterLabel = 'MaluDB Design Template';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,7 +50,7 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
     <meta http-equiv="x-ua-compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="<?php echo htmlspecialchars($appMetaDescription); ?>" />
-    <title><?php echo htmlspecialchars($restaurantName); ?> - <?php echo htmlspecialchars($appTitleSuffix); ?></title>
+    <title><?php echo htmlspecialchars($businessName); ?> - <?php echo htmlspecialchars($appTitleSuffix); ?></title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon-vt.png" />
@@ -115,486 +100,148 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
             <!-- Navigation menu starts -->
             <div id="kobie-nav-menu" class="navbar-content">
               <ul class="nxl-navbar" id="sidebar-nav-list">
-                <?php
-                // Helper: check if a nav item is permitted
-                $navAllowed = function($id) use ($permittedNavItems) {
-                    return in_array($id, $permittedNavItems);
-                };
-                ?>
+                <!-- Unified navigation: identical for every user -->
 
-                <!-- PROFESSIONAL/AFFILIATE MODE: SCHEDULING section -->
-                <?php if ($navAllowed('nav-caption-professional')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-professional"><label>SCHEDULING</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-dashboard')): ?>
-                <li class="nxl-item active current-page" id="nav-professional-dashboard">
+                <!-- SCHEDULING section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-scheduling"><label>SCHEDULING</label></li>
+                <li class="nxl-item active current-page" id="nav-dashboard">
                   <a href="#" class="nxl-link" hx-get="/partials/professional/dashboard.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-home"></i></span>
                     <span class="nxl-mtext">Dashboard</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-appointments')): ?>
-                <li class="nxl-item" id="nav-professional-appointments">
+                <li class="nxl-item" id="nav-appointments">
                   <a href="#" class="nxl-link" hx-get="/partials/professional/calendar.php?view=upcoming" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-clock"></i></span>
                     <span class="nxl-mtext">Appointments</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-calendar')): ?>
-                <li class="nxl-item" id="nav-professional-calendar">
+                <li class="nxl-item" id="nav-calendar">
                   <a href="#" class="nxl-link" hx-get="/partials/professional/calendar.php?view=week" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-calendar"></i></span>
                     <span class="nxl-mtext">Calendar</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-todos')): ?>
                 <li class="nxl-item" id="nav-todos">
                   <a href="#" class="nxl-link" hx-get="/partials/todos/list.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-check-square"></i></span>
                     <span class="nxl-mtext">Todo List</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-sms-messages')): ?>
+
+                <!-- BUSINESS section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-business"><label>BUSINESS</label></li>
+                <li class="nxl-item" id="nav-clients">
+                  <a href="#" class="nxl-link" hx-get="/partials/professional/clients.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-users"></i></span>
+                    <span class="nxl-mtext">Clients</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-services">
+                  <a href="#" class="nxl-link" hx-get="/partials/professional/services.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-briefcase"></i></span>
+                    <span class="nxl-mtext">Services</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-availability">
+                  <a href="#" class="nxl-link" hx-get="/partials/professional/availability.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-clock"></i></span>
+                    <span class="nxl-mtext">Availability</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-time-off">
+                  <a href="#" class="nxl-link" hx-get="/partials/professional/time-off.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-moon"></i></span>
+                    <span class="nxl-mtext">Time Off</span>
+                  </a>
+                </li>
+
+                <!-- MESSAGES section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-messages"><label>MESSAGES</label></li>
                 <li class="nxl-item" id="nav-sms-messages">
                   <a href="#" class="nxl-link" hx-get="/partials/messages/sms-log.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-message-square"></i></span>
                     <span class="nxl-mtext">SMS Messages</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-voice-calls')): ?>
                 <li class="nxl-item" id="nav-voice-calls">
                   <a href="#" class="nxl-link" hx-get="/partials/messages/voice-log.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-phone-call"></i></span>
                     <span class="nxl-mtext">Voice Calls</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-email-messages')): ?>
                 <li class="nxl-item" id="nav-email-messages">
                   <a href="#" class="nxl-link" hx-get="/partials/messages/email-log.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-mail"></i></span>
                     <span class="nxl-mtext">Email Messages</span>
                   </a>
                 </li>
-                <?php endif; ?>
 
-                <!-- PROFESSIONAL MODE: BUSINESS section -->
-                <?php if ($navAllowed('nav-caption-professional-business')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-professional-business"><label>BUSINESS</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-clients')): ?>
-                <li class="nxl-item" id="nav-professional-clients">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/clients.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-users"></i></span>
-                    <span class="nxl-mtext">Clients</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-services')): ?>
-                <li class="nxl-item" id="nav-professional-services">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/services.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                    <span class="nxl-mtext">Services</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-availability')): ?>
-                <li class="nxl-item" id="nav-professional-availability">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/availability.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-clock"></i></span>
-                    <span class="nxl-mtext">Availability</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-time-off')): ?>
-                <li class="nxl-item" id="nav-professional-time-off">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/time-off.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-moon"></i></span>
-                    <span class="nxl-mtext">Time Off</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- PROFESSIONAL MODE: ADMIN section -->
-                <?php if ($navAllowed('nav-caption-professional-admin')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-professional-admin"><label>ADMIN</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-settings')): ?>
-                <li class="nxl-item" id="nav-professional-settings">
+                <!-- ADMIN section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-admin"><label>ADMIN</label></li>
+                <li class="nxl-item" id="nav-settings">
                   <a href="#" class="nxl-link" hx-get="/partials/professional/settings.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-settings"></i></span>
                     <span class="nxl-mtext">Settings</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-professional-reports')): ?>
-                <li class="nxl-item" id="nav-professional-reports">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/reports.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
-                    <span class="nxl-mtext">Reports</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- RESTAURANT MODE: SCHEDULING section -->
-                <?php if ($navAllowed('nav-caption-scheduling')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-scheduling"><label>SCHEDULING</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-dashboard')): ?>
-                <li class="nxl-item active current-page" id="nav-dashboard">
-                  <a href="#" class="nxl-link" hx-get="/partials/dashboard/index.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-home"></i></span>
-                    <span class="nxl-mtext">Dashboard</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-reservations')): ?>
-                <li class="nxl-item" id="nav-reservations">
-                  <a href="#" class="nxl-link" hx-get="/partials/reservations/calendar.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-calendar"></i></span>
-                    <span class="nxl-mtext">Reservations</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-floor-plan')): ?>
-                <li class="nxl-item" id="nav-floor-plan">
-                  <a href="#" class="nxl-link" hx-get="/partials/tables/floor-plan.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-grid"></i></span>
-                    <span class="nxl-mtext">Floor Plan</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-waitlist')): ?>
-                <li class="nxl-item" id="nav-waitlist">
-                  <a href="#" class="nxl-link" hx-get="/partials/waitlist/index.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-list"></i></span>
-                    <span class="nxl-mtext">Waitlist</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-events')): ?>
-                <li class="nxl-item" id="nav-events">
-                  <a href="#" class="nxl-link" hx-get="/partials/events/list.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-star"></i></span>
-                    <span class="nxl-mtext">Events</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-todos')): ?>
-                <li class="nxl-item" id="nav-todos-r">
-                  <a href="#" class="nxl-link" hx-get="/partials/todos/list.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-check-square"></i></span>
-                    <span class="nxl-mtext">Todo List</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-sms-messages')): ?>
-                <li class="nxl-item" id="nav-sms-messages-r">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/sms-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-message-square"></i></span>
-                    <span class="nxl-mtext">SMS Messages</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-voice-calls')): ?>
-                <li class="nxl-item" id="nav-voice-calls-r">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/voice-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-phone-call"></i></span>
-                    <span class="nxl-mtext">Voice Calls</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-email-messages')): ?>
-                <li class="nxl-item" id="nav-email-messages-r">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/email-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-mail"></i></span>
-                    <span class="nxl-mtext">Email Messages</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- GUESTS section -->
-                <?php if ($navAllowed('nav-caption-guests')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-guests"><label>GUESTS</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-guests')): ?>
-                <li class="nxl-item" id="nav-guests">
-                  <a href="#" class="nxl-link" hx-get="/partials/guests/list.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-users"></i></span>
-                    <span class="nxl-mtext">Guest Directory</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- MANAGEMENT section -->
-                <?php if ($navAllowed('nav-caption-management')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-management"><label><?php echo $currentLocationType === 'affiliate' ? 'PIPELINE' : 'MANAGEMENT'; ?></label></li>
-                <?php endif; ?>
-                <?php if ($isAffiliateMode && $navAllowed('nav-prospects')): ?>
-                <li class="nxl-item" id="nav-prospects">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/prospects.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-user-plus"></i></span>
-                    <span class="nxl-mtext">Prospects</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-in-setup')): ?>
-                <li class="nxl-item" id="nav-in-setup">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/prospects.php?status=in_setup" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-settings"></i></span>
-                    <span class="nxl-mtext">In-Setup</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-clients')): ?>
-                <li class="nxl-item" id="nav-clients">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/prospects.php?status=client" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-check-circle"></i></span>
-                    <span class="nxl-mtext">Clients</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-affiliate-users')): ?>
-                <li class="nxl-item" id="nav-affiliate-users">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/users.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-users"></i></span>
-                    <span class="nxl-mtext">Users</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-affiliate-products')): ?>
-                <li class="nxl-item" id="nav-affiliate-products">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/products.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-package"></i></span>
-                    <span class="nxl-mtext">Products</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-table-setup')): ?>
-                <li class="nxl-item" id="nav-table-setup">
-                  <a href="#" class="nxl-link" hx-get="/partials/tables/list.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-layout"></i></span>
-                    <span class="nxl-mtext">Table Setup</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-sections')): ?>
-                <li class="nxl-item" id="nav-sections">
-                  <a href="#" class="nxl-link" hx-get="/partials/sections/list.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-layers"></i></span>
-                    <span class="nxl-mtext">Sections</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-hours')): ?>
-                <li class="nxl-item" id="nav-hours">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/hours.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-clock"></i></span>
-                    <span class="nxl-mtext">Operating Hours</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-turn-times')): ?>
-                <li class="nxl-item" id="nav-turn-times">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/turn-times.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-watch"></i></span>
-                    <span class="nxl-mtext">Turn Times</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-special-dates')): ?>
-                <li class="nxl-item" id="nav-special-dates">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/special-dates.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-star"></i></span>
-                    <span class="nxl-mtext">Special Dates</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-reports')): ?>
-                <li class="nxl-item" id="nav-reports">
-                  <a href="#" class="nxl-link" hx-get="/partials/reports/index.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
-                    <span class="nxl-mtext">Reports</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- SETTINGS section -->
-                <?php if ($navAllowed('nav-caption-settings')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-settings"><label>SETTINGS</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-profile')): ?>
-                <li class="nxl-item" id="nav-profile">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/profile.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-home"></i></span>
-                    <span class="nxl-mtext">Business Profile</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-reservation-rules')): ?>
-                <li class="nxl-item" id="nav-reservation-rules">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/reservations.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-sliders"></i></span>
-                    <span class="nxl-mtext">Reservation Rules</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-notifications')): ?>
                 <li class="nxl-item" id="nav-notifications">
                   <a href="#" class="nxl-link" hx-get="/partials/settings/notifications.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-bell"></i></span>
                     <span class="nxl-mtext">Notifications</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-staff')): ?>
                 <li class="nxl-item" id="nav-staff">
                   <a href="#" class="nxl-link" hx-get="/partials/settings/users.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-user-plus"></i></span>
                     <span class="nxl-mtext">Staff Users</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-integrations')): ?>
-                <li class="nxl-item" id="nav-integrations">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/integrations.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-zap"></i></span>
-                    <span class="nxl-mtext">Integrations</span>
+                <li class="nxl-item" id="nav-reports">
+                  <a href="#" class="nxl-link" hx-get="/partials/professional/reports.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
+                    <span class="nxl-mtext">Reports</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-phone-numbers')): ?>
-                <li class="nxl-item" id="nav-phone-numbers">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/phone-numbers.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-phone"></i></span>
-                    <span class="nxl-mtext">Phone Numbers</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-voice-prompts')): ?>
-                <li class="nxl-item" id="nav-voice-prompts">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/voice-prompts.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-mic"></i></span>
-                    <span class="nxl-mtext">Voice Agents</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-text-agents')): ?>
-                <li class="nxl-item" id="nav-text-agents">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/text-agents.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-message-square"></i></span>
-                    <span class="nxl-mtext">Text Agents</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-email-agents')): ?>
-                <li class="nxl-item" id="nav-email-agents">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/email-agents.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-mail"></i></span>
-                    <span class="nxl-mtext">Email Agents</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- BILLING section -->
-                <?php if ($navAllowed('nav-caption-billing')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-billing"><label>BILLING</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-billing')): ?>
                 <li class="nxl-item" id="nav-billing">
                   <a href="#" class="nxl-link" hx-get="/partials/billing/invoices.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-credit-card"></i></span>
                     <span class="nxl-mtext">Billing</span>
                   </a>
                 </li>
-                <?php endif; ?>
 
                 <!-- PLATFORM section -->
-                <?php if ($navAllowed('nav-caption-platform')): ?>
                 <li class="nxl-item nxl-caption" id="nav-caption-platform"><label>PLATFORM</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-manage-restaurants')): ?>
-                <li class="nxl-item" id="nav-manage-restaurants">
+                <li class="nxl-item" id="nav-manage-businesses">
                   <a href="#" class="nxl-link" hx-get="/partials/platform/restaurants.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-briefcase"></i></span>
                     <span class="nxl-mtext">Manage Locations</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-platform-users')): ?>
                 <li class="nxl-item" id="nav-platform-users">
                   <a href="#" class="nxl-link" hx-get="/partials/platform/users.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-user"></i></span>
                     <span class="nxl-mtext">Users</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-products')): ?>
                 <li class="nxl-item" id="nav-products">
                   <a href="#" class="nxl-link" hx-get="/partials/platform/products.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-package"></i></span>
                     <span class="nxl-mtext">Products & Pricing</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-subscriptions')): ?>
                 <li class="nxl-item" id="nav-subscriptions">
                   <a href="#" class="nxl-link" hx-get="/partials/platform/subscriptions.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-credit-card"></i></span>
                     <span class="nxl-mtext">Subscriptions</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-account-options')): ?>
                 <li class="nxl-item" id="nav-account-options">
                   <a href="#" class="nxl-link" hx-get="/partials/platform/account-options.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-toggle-right"></i></span>
                     <span class="nxl-mtext">Account Options</span>
                   </a>
                 </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-affiliates')): ?>
-                <li class="nxl-item" id="nav-affiliates">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/affiliates.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-users"></i></span>
-                    <span class="nxl-mtext">Affiliates</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-platform-billing')): ?>
-                <li class="nxl-item" id="nav-platform-billing">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/billing-settings.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-file-text"></i></span>
-                    <span class="nxl-mtext">Billing Config</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-                <?php if (isSuperAdmin()): ?>
-                <li class="nxl-item" id="nav-nav-permissions">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/nav-permissions.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-shield"></i></span>
-                    <span class="nxl-mtext">Nav Permissions</span>
-                  </a>
-                </li>
-                <?php endif; ?>
-
-                <!-- AFFILIATE section -->
-                <?php if ($navAllowed('nav-caption-affiliate')): ?>
-                <li class="nxl-item nxl-caption" id="nav-caption-affiliate"><label>AFFILIATE</label></li>
-                <?php endif; ?>
-                <?php if ($navAllowed('nav-affiliate-dashboard')): ?>
-                <li class="nxl-item" id="nav-affiliate-dashboard">
-                  <a href="#" class="nxl-link" hx-get="/partials/affiliate/dashboard.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-trending-up"></i></span>
-                    <span class="nxl-mtext">My Referrals</span>
-                  </a>
-                </li>
-                <?php endif; ?>
 
                 <!-- Logout (always visible) -->
                 <li class="nxl-item nxl-caption" id="nav-caption-spacer"><label></label></li>
@@ -639,7 +286,7 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
 
                 <!-- Page title -->
                 <div class="d-flex align-items-center" id="header-title-area">
-                  <h5 class="fw-bold text-white m-0" id="page-title"><?php echo htmlspecialchars($restaurantName); ?><?php if ($restaurantPhone): ?> <span class="fw-normal fs-6 ms-2" id="header-phone"><?php echo htmlspecialchars($restaurantPhone); ?></span><?php endif; ?></h5>
+                  <h5 class="fw-bold text-white m-0" id="page-title"><?php echo htmlspecialchars($businessName); ?><?php if ($businessPhone): ?> <span class="fw-normal fs-6 ms-2" id="header-phone"><?php echo htmlspecialchars($businessPhone); ?></span><?php endif; ?></h5>
                 </div>
               </div>
               <!-- Header left ends -->
@@ -655,22 +302,22 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
                     </div>
                   </div>
 
-                  <!-- Restaurant switcher (if user has multiple restaurants) -->
-                  <?php if ($hasMultipleRestaurants): ?>
-                  <div class="dropdown me-3" id="restaurant-switcher">
+                  <!-- Business switcher (if user has multiple businesses) -->
+                  <?php if ($hasMultipleBusinesses): ?>
+                  <div class="dropdown me-3" id="business-switcher">
                     <a class="dropdown-toggle d-flex align-items-center text-white"
                        href="#!" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                       <i class="feather-repeat fs-5 me-2"></i>
-                      <span class="fw-bold d-none d-md-inline" id="current-restaurant-name"><?php echo htmlspecialchars($restaurantName); ?></span>
+                      <span class="fw-bold d-none d-md-inline" id="current-business-name"><?php echo htmlspecialchars($businessName); ?></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 20rem;" id="restaurant-switcher-menu">
-                      <?php foreach ($restaurants as $r): ?>
+                    <div class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 20rem;" id="business-switcher-menu">
+                      <?php foreach ($businesses as $r): ?>
                       <a class="dropdown-item d-flex align-items-center <?php echo ($r['id'] == ($_SESSION['current_restaurant_id'] ?? 0)) ? 'active' : ''; ?>"
                          href="#"
                          hx-post="/partials/auth/switch-restaurant.php"
                          hx-vals='{"restaurant_id": <?php echo (int)$r['id']; ?>}'
                          hx-target="#page-content"
-                         id="restaurant-switch-<?php echo (int)$r['id']; ?>">
+                         id="business-switch-<?php echo (int)$r['id']; ?>">
                         <i class="feather-home fs-5 me-2"></i>
                         <?php echo htmlspecialchars($r['name']); ?>
                         <span class="badge bg-light text-dark ms-2"><?php echo htmlspecialchars($r['role']); ?></span>
@@ -695,13 +342,6 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
                          id="user-menu-settings">
                         <i class="feather-settings fs-5 me-2"></i>Settings
                       </a>
-                      <?php if ($userIsAffiliate): ?>
-                      <a class="dropdown-item d-flex align-items-center" href="#"
-                         hx-get="/partials/affiliate/settings.php" hx-target="#page-content" hx-swap="innerHTML"
-                         id="user-menu-affiliate-settings">
-                        <i class="feather-briefcase fs-5 me-2"></i>Affiliate Settings
-                      </a>
-                      <?php endif; ?>
                       <div class="dropdown-divider"></div>
                       <div class="mx-3 mt-2 d-grid" id="user-menu-logout">
                         <a href="/logout.php" class="btn btn-primary">Logout</a>
@@ -717,11 +357,11 @@ $permittedNavItems = getPermittedNavItems($userPlatformRole, $currentRole, $curr
           </header>
           <!-- App header ends -->
 
-          <?php if ($currentRestaurantStatus !== 'active'): ?>
-          <!-- Restaurant status banner -->
-          <div class="alert alert-warning text-center fw-bold mb-0 rounded-0 py-2" id="restaurant-status-banner">
+          <?php if ($currentBusinessStatus !== 'active'): ?>
+          <!-- Business status banner -->
+          <div class="alert alert-warning text-center fw-bold mb-0 rounded-0 py-2" id="business-status-banner">
               <i class="feather-alert-triangle me-2"></i>
-              This company is currently <strong><?php echo htmlspecialchars(ucfirst(str_replace('-', ' ', $currentRestaurantStatus))); ?></strong>.
+              This company is currently <strong><?php echo htmlspecialchars(ucfirst(str_replace('-', ' ', $currentBusinessStatus))); ?></strong>.
           </div>
           <?php endif; ?>
 

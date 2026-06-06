@@ -3181,3 +3181,15 @@ page into the database for the url of https://zozocal.com"
 
 **Changes:**
 - Rewrote the README Overview to describe the project as a design starting point for Bootstrap 5, PHP, and HTMX applications using the MaluDB memory database system.
+
+## 2026-06-06 — Unified Navigation Shell (Template Conversion Step 1)
+
+**Prompt:** "We want all users to get the same screen regardless of their user settings, roles, etc. Please start so I can view your progress and guide you. I will be logging is as edward.honour@kineticseas.com to view your progress." (Following decisions: remove Restaurant, Prospects/SalesCoach, and Affiliate modules; keep Professional screens.)
+
+**Changes:**
+- `html/app.php` — rewrote as the unified template shell:
+  - Removed all role/product-type branching: no more `getPermittedNavItems()`, `location_type`, `is_affiliate`, `user_type`, or professional/restaurant/affiliate mode switching. Every user now gets the identical screen.
+  - Single navigation for everyone: SCHEDULING (Dashboard, Appointments, Calendar, Todo List), BUSINESS (Clients, Services, Availability, Time Off), MESSAGES (SMS, Voice, Email logs), ADMIN (Settings, Notifications, Staff Users, Reports, Billing), PLATFORM (Manage Locations, Users, Products & Pricing, Subscriptions, Account Options).
+  - Default landing content is the professional dashboard for all users; restaurant and affiliate nav items removed.
+  - Renamed display variables restaurant→business ($businessName, $businessPhone, business switcher); removed affiliate settings dropdown item; title/meta/footer now "MaluDB Design Template".
+- Verified `php -l` clean and no references to removed variables remain.
