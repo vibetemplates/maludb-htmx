@@ -3352,3 +3352,11 @@ tokens.
 **Verification:** php -l clean on all three files; list queries and insert/update round-trip
 exercised against live Postgres (rolled back). `partials/settings/users.php` left in place —
 only the nav link was removed.
+
+## 2026-06-06 — Sidenav brand logo
+
+**Prompt:** "Pull down the repo and replace MaluDB in the top sidenav with html/assets/images/logo.png"
+
+**Change:** pulled origin/main (Ed uploaded logo.png, 865x270). In `html/app.php` replaced the
+`#brand-text-lg` "MaluDB" text span with `<img src="/assets/images/logo.png">` (`#brand-logo-lg`,
+40px high, width auto). The collapsed-state `#brand-text-sm` "M" span is unchanged.

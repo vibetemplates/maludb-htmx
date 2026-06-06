@@ -80,7 +80,7 @@ $appFooterLabel = 'MaluDB Design Template';
             <!-- Logo starts -->
             <div id="kobie-logo-area" class="m-header">
               <a href="app.php" class="b-brand">
-                <span class="logo logo-lg fw-bold fs-4 text-primary" id="brand-text-lg">MaluDB</span>
+                <img src="/assets/images/logo.png" alt="MaluDB" class="logo logo-lg" style="height: 40px; width: auto;" id="brand-logo-lg">
                 <span class="logo logo-sm fw-bold fs-5 text-primary" id="brand-text-sm">M</span>
               </a>
             </div>
