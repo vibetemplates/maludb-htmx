@@ -3311,3 +3311,11 @@ page into the database for the url of https://zozocal.com"
 - Ran `composer install --no-dev` in /var/www (mailersend, guzzle, etc.); added `vendor/` to .gitignore.
 
 **Verification:** all three queries executed against live Postgres without error; `getProfessionalAvailableSlots(3, 15, '2026-06-07', ...)` returns 13 slots; `professional-notifications.php` require chain loads cleanly.
+
+## 2026-06-06 — Business section: stacked action buttons in tables
+
+**Prompt:** "In the Business section all pages have the buttons stacked instead of side by side."
+
+**Root cause:** the Kobie theme sets `.btn { display: flex; ... }` globally (block-level). The earlier override only targeted `.btn-icon`, but the Business pages (Services, Availability, Time Off) put plain `.btn .btn-sm` buttons directly in table cells, so they stacked. (Clients was unaffected — its buttons sit in a `d-inline-flex` wrapper.)
+
+**Change:** broadened the existing one-line override in `html/assets/css/kobie-custom.css` from `.table td .btn-icon` to `.table td .btn { display: inline-flex; }` — covers all current and future table row actions; the old `.btn-icon` case is still matched since those elements also carry `.btn`. No markup changes.

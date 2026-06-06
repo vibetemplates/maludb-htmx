@@ -207,3 +207,7 @@ New sidebar heading **MALUDB SETUP** under Memory Elements, partials in
 - [x] save-appointment 500: missing `vendor/` — ran `composer install --no-dev`; added `vendor/` to .gitignore
 
 All queries verified directly against the live PostgreSQL database; slot generation returns results for a real service/restaurant pair. Note for the template-conversion effort: more MySQL-isms may lurk in not-yet-exercised code paths — grep for `DATE_SUB|DATE_ADD|FIELD(|IFNULL|GROUP_CONCAT|ON DUPLICATE` when touching a module.
+
+## Review — 2026-06-06 (Business section button stacking)
+
+- [x] Broadened `.table td .btn-icon` override to `.table td .btn { display: inline-flex; }` in kobie-custom.css — theme's global `.btn { display: flex }` stacked plain buttons in Services/Availability/Time Off table rows.
