@@ -198,3 +198,12 @@ New sidebar heading **MALUDB SETUP** under Memory Elements, partials in
   `GRANT INSERT, UPDATE, DELETE ON maludb_subject_type, maludb_verb_type TO zozocal;`
   before saves/deletes on those two pages will succeed (until then they show a
   clean "Save failed: permission denied" alert).
+
+## Review — 2026-06-06 (500-error fixes)
+
+- [x] check-slots 500: `getProfessionalAppointmentBlocks()` MySQL `DATE_SUB`/`DATE_ADD` → Postgres `make_interval(mins => ...)` (helpers/professional-availability.php)
+- [x] Remaining MySQL `FIELD()` sorts → portable `CASE` (html/api/v1/todos.php, html/api/mcp/pro-tools.php)
+- [x] reports-data 500: `HAVING visit_count > 0` alias → full aggregate expression (Postgres disallows aliases in HAVING)
+- [x] save-appointment 500: missing `vendor/` — ran `composer install --no-dev`; added `vendor/` to .gitignore
+
+All queries verified directly against the live PostgreSQL database; slot generation returns results for a real service/restaurant pair. Note for the template-conversion effort: more MySQL-isms may lurk in not-yet-exercised code paths — grep for `DATE_SUB|DATE_ADD|FIELD(|IFNULL|GROUP_CONCAT|ON DUPLICATE` when touching a module.

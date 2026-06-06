@@ -9,6 +9,9 @@ logs/*
 # Claude Code local settings
 .claude/settings.local.json
 
+# Composer dependencies (run `composer install` on deploy)
+vendor/
+
 # OS files
 .DS_Store
 **/.DS_Store

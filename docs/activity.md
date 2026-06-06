@@ -3293,3 +3293,21 @@ page into the database for the url of https://zozocal.com"
 **Root cause:** the Kobie theme defines `.btn-icon { display: flex; ... }` — block-level, so adjacent Edit/Delete buttons stack vertically in every table that doesn't wrap them in a flex row (people, projects, episodes, documents, subjects, verbs, attribute-templates, _scaffold.php — not just the type-CRUD screens patched earlier).
 
 **Change:** added one override to `html/assets/css/kobie-custom.css` (loads after the theme): `.table td .btn-icon { display: inline-flex; }` — fixes all list screens at once, no markup changes.
+
+## 2026-06-06 — Fix 500s: check-slots (Postgres syntax), todos/reports MySQL-isms, save-appointment (missing vendor/)
+
+**Prompt:** "/partials/professional/check-slots.php?appointment_id=0&start_at=&service_id=15&appointment_date=2026-06-07 500 error" then "Yes" (approve plan) then "Next: /partials/professional/save-appointment.php also has a 500 error."
+
+**Root causes (all PostgreSQL-migration leftovers + a deploy gap):**
+1. `helpers/professional-availability.php` `getProfessionalAppointmentBlocks()` used MySQL-only `DATE_SUB/DATE_ADD(... INTERVAL col MINUTE)` → Postgres syntax error → check-slots 500.
+2. `html/api/v1/todos.php` and `html/api/mcp/pro-tools.php` still used MySQL `FIELD(priority, ...)` for sorting (the todos partial was already fixed earlier).
+3. `html/partials/professional/reports-data.php` used `HAVING visit_count > 0` — Postgres does not allow column aliases in HAVING.
+4. `save-appointment.php` 500 was different: `helpers/notifications.php` requires `vendor/autoload.php` but `vendor/` was never installed on this server.
+
+**Changes:**
+- `DATE_SUB/DATE_ADD` → `start_at - make_interval(mins => buffer_before_minutes)` / `end_at + make_interval(mins => buffer_after_minutes)` (4 occurrences).
+- `FIELD(priority, 'high','medium','low')` → portable `CASE priority WHEN 'high' THEN 1 ... END` in both API files.
+- `HAVING visit_count > 0` → repeated the full SUM(CASE...) aggregate expression.
+- Ran `composer install --no-dev` in /var/www (mailersend, guzzle, etc.); added `vendor/` to .gitignore.
+
+**Verification:** all three queries executed against live Postgres without error; `getProfessionalAvailableSlots(3, 15, '2026-06-07', ...)` returns 13 slots; `professional-notifications.php` require chain loads cleanly.

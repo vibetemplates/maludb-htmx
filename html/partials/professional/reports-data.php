@@ -379,7 +379,7 @@ $topClientsStmt = $pdo->prepare(
      WHERE c.restaurant_id = ?
        AND a.appointment_date BETWEEN ? AND ?
      GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone
-     HAVING visit_count > 0
+     HAVING SUM(CASE WHEN a.status NOT IN ('cancelled', 'no_show') THEN 1 ELSE 0 END) > 0
      ORDER BY visit_count DESC, revenue DESC, last_visit_at DESC
      LIMIT 10"
 );

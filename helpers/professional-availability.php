@@ -353,13 +353,13 @@ function getProfessionalAppointmentBlocks($restaurantId, $rangeStart, $rangeEnd,
             location_type,
             location_label,
             confirmation_code,
-            DATE_SUB(start_at, INTERVAL buffer_before_minutes MINUTE) AS occupied_start_at,
-            DATE_ADD(end_at, INTERVAL buffer_after_minutes MINUTE) AS occupied_end_at
+            start_at - make_interval(mins => buffer_before_minutes) AS occupied_start_at,
+            end_at + make_interval(mins => buffer_after_minutes) AS occupied_end_at
         FROM professional_appointments
         WHERE restaurant_id = ?
           AND status NOT IN ('cancelled', 'no_show')
-          AND DATE_SUB(start_at, INTERVAL buffer_before_minutes MINUTE) < ?
-          AND DATE_ADD(end_at, INTERVAL buffer_after_minutes MINUTE) > ?
+          AND start_at - make_interval(mins => buffer_before_minutes) < ?
+          AND end_at + make_interval(mins => buffer_after_minutes) > ?
     ";
     $params = [
         (int)$restaurantId,
