@@ -55,17 +55,17 @@ Key findings:
 - [ ] Add a single `config/app.php` for branding: app name, support email, logo path, color theme
 
 ### Phase 3 — Remove domain modules (html/)
-- [ ] Remove restaurant partials: `reservations/`, `tables/`, `guests/`, `waitlist/`, `sections/`, meal-status
-- [ ] Remove professional module: `partials/professional/`, `pro-booking/`, professional helpers
-- [ ] Remove prospect/SalesCoach module: `prospects/`, `products/`, `scoring/`, `agents/`, `sessions/`, `coaching-calendar/`, related models
-- [ ] Remove affiliate module (pending decision)
+- [x] Remove restaurant partials: `reservations/`, `tables/`, `guests/`, `waitlist/`, `sections/`, `booking/`
+- [x] ~~Remove professional module~~ KEPT per decision — professional screens are the template's example module
+- [x] Remove prospect/SalesCoach partials: `prospects/`, `products/`, `scoring/`, `sessions/`, `coaching-calendar/`, dashboard widgets (models cleanup still pending)
+- [x] Remove affiliate partials: `partials/affiliate/`
 - [ ] Remove/extract AI integration code (pending decision): `api/retell/`, `api/sms/`, `api/mcp/`, voice/SMS/OpenAI helpers, `scripts/`
 - [ ] Remove `booking/`, `cron/` invoice jobs, domain landing pages
 - [ ] Remove domain helpers: `restaurant.php`, `availability.php`, `voice-api.php`, etc.
 
 ### Phase 4 — Genericize what remains
-- [ ] De-brand: replace ZozoCal/Drajeo references with `config/app.php` values in `login.php`, `register.php`, `app.php`, `privacy.php`, `terms.php`, landing page
-- [ ] Clean `app.php` navigation down to generic items (Dashboard, Tasks, Calendar, Team, Settings, Admin)
+- [x] De-brand `app.php`, `login.php`, `register.php` (MaluDB text brand) — `privacy.php`, `terms.php`, landing page still pending
+- [x] Clean `app.php` navigation to one unified menu for all users; new generic dashboard showcase at `partials/dashboard/index.php`
 - [ ] Tenant naming refactor (pending decision #2)
 - [ ] Verify every kept page loads without removed dependencies
 - [ ] Ensure all div tags in kept HTML files have unique ids (CLAUDE.md rule 11)
