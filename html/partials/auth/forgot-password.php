@@ -2,6 +2,8 @@
 require_once '../../../helpers/session.php';
 require_once '../../../helpers/csrf.php';
 require_once '../../../helpers/validation.php';
+require_once '../../../helpers/db.php';
+require_once '../../../helpers/notifications.php';
 require_once '../../../models/User.php';
 
 init_session();
@@ -45,10 +47,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $userModel->createPasswordResetToken($email);
 
     if ($token) {
-        // In a real application, you would send an email here
-        // For now, we'll log it and show a success message
-        error_log("Password reset token for $email: $token");
-        error_log("Reset URL: http://{$_SERVER['HTTP_HOST']}/reset-password.php?token=$token");
+        // Send the reset link from the user's own tenant (falls back to PHP
+        // mail() inside sendEmail() when no MailerSend key is configured).
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $resetUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/reset-password.php?token=' . urlencode($token);
+
+        $restStmt = db()->prepare(
+            "SELECT ur.restaurant_id FROM user_restaurants ur
+               JOIN users u ON u.id = ur.user_id
+              WHERE u.email = ? AND ur.is_active = 1
+              ORDER BY ur.id LIMIT 1"
+        );
+        $restStmt->execute([$email]);
+        $restaurantId = (int)($restStmt->fetchColumn() ?: 0);
+
+        $htmlBody = '<p>We received a request to reset your password.</p>'
+                  . '<p><a href="' . htmlspecialchars($resetUrl) . '">Click here to choose a new password</a>.</p>'
+                  . '<p>This link expires in 1 hour. If you did not request a reset, you can ignore this email.</p>';
+        $textBody = "We received a request to reset your password.\n\n"
+                  . "Open this link to choose a new password (expires in 1 hour):\n{$resetUrl}\n\n"
+                  . "If you did not request a reset, you can ignore this email.";
+
+        if (!sendEmail($restaurantId, $email, 'Reset your password', $htmlBody, $textBody)) {
+            error_log("Password reset email failed to send for {$email}");
+        }
     }
 
     // Always show success message (don't reveal if email exists)

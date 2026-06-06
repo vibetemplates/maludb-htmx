@@ -66,6 +66,18 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE INDEX IF NOT EXISTS idx_users_active ON users (is_active);
 
+-- One-hour, single-use tokens for the forgot-password flow.
+CREATE TABLE IF NOT EXISTS password_resets (
+    id         SERIAL PRIMARY KEY,
+    email      VARCHAR(255) NOT NULL,
+    token      VARCHAR(64)  NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP    NOT NULL,
+    used_at    TIMESTAMP,
+    CONSTRAINT uk_password_resets_token UNIQUE (token)
+);
+CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets (email);
+
 -- Tenant root. Named "restaurants" for historical reasons; the template treats
 -- it as the generic business/account container and leans on it as little as
 -- possible (rename is tracked in the template-conversion plan).

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Coming Soon</title>
+    <title>Apache-Bootstrap-PHP-HTMX</title>
     <meta name="description" content="This site is coming soon." />
 
     <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon-vt.png" />
@@ -155,10 +155,10 @@
         <div class="coming-panel" id="coming-panel">
             <div class="coming-kicker" id="coming-kicker">
                 <i class="feather-clock" aria-hidden="true"></i>
-                <span id="coming-kicker-text">Launching Soon</span>
+                <span id="coming-kicker-text">Native Version</span>
             </div>
 
-            <h1 class="coming-title" id="coming-title">Coming Soon</h1>
+            <h1 class="coming-title" id="coming-title">Apache-Bootstrap-PHP-HTMX</h1>
 
             <p class="coming-subtitle" id="coming-subtitle">
                 This landing page has not been configured yet. The application is available, and you can still sign in below.
@@ -169,10 +169,6 @@
             </div>
 
             <div class="coming-actions" id="coming-actions">
-                <a href="/sms-signup.php" class="coming-btn-login" id="coming-btn-reservation" style="background:linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                    <i class="feather-calendar" aria-hidden="true"></i>
-                    <span id="coming-btn-reservation-text">Make a Reservation</span>
-                </a>
                 <a href="/login.php" class="coming-btn-login" id="coming-btn-login">
                     <i class="feather-log-in" aria-hidden="true"></i>
                     <span id="coming-btn-login-text">Login</span>
@@ -180,7 +176,7 @@
             </div>
 
             <div class="coming-note" id="coming-note">
-                A domain-specific landing page can be added later through the `landing_page_routes` table.
+                This template is for distributions where the application resides on the same network as the database server. The API version using the MaluDB.com API server and Database as a Service for database access is not this version.
             </div>
         </div>
     </main>

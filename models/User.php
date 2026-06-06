@@ -48,7 +48,7 @@ class User {
     public static function findByEmail(string $email): ?array {
         try {
             $db = Database::getInstance()->getConnection();
-            $stmt = $db->prepare("SELECT u.*, o.name as org_name FROM users u LEFT JOIN orgs o ON u.org_id = o.id WHERE u.email = :email AND u.status = 'active'");
+            $stmt = $db->prepare("SELECT u.* FROM users u WHERE u.email = :email AND u.is_active = 1");
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
             return $user ?: null;
@@ -160,7 +160,7 @@ class User {
             $this->db->beginTransaction();
 
             $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $this->db->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE email = ?");
+            $stmt = $this->db->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE email = ?");
             $stmt->execute([$hashedPassword, $resetData['email']]);
 
             $stmt = $this->db->prepare("UPDATE password_resets SET used_at = NOW() WHERE id = ?");

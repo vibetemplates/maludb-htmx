@@ -3421,3 +3421,28 @@ maludb_* (system install), restaurant/voice/SMS/affiliate legacy.
 **Verification:** install.sql run twice into a scratch schema (14 tables, idempotent);
 simulated registration inserts + ON CONFLICT upsert + token/prompt inserts against the fresh
 schema (rolled back, schema dropped); php -l clean on all changed files.
+
+## 2026-06-06 — Wire up password resets + landing page text
+
+**Prompts:**
+1. "Let's wire up password resets and forgot password. On the main landing page, pre-login: 1) change 'Launching Soon' to 'Native Version', 2) Remove 'Make a Reservation', 3) Change 'Coming Soon' to 'Apache-Bootstrap-PHP-HTMX'"
+2. "In the landing page also change 'A domain-specific landing page can be added later through the `landing_page_routes` table.' to 'This template is for distributions where the application resides on the same network as the databse server...'"
+
+**Password reset wiring (flow existed but was broken/unfinished):**
+- Created `password_resets` table (live + added to docs/sql/install.sql): email, token (unique),
+  created_at, expires_at, used_at — 1-hour single-use tokens.
+- models/User.php: resetPassword() updated `users.password` → `password_hash` (column never
+  existed; resets always failed); findByEmail() dropped LEFT JOIN to nonexistent `orgs` table
+  and `status='active'` → `is_active = 1`.
+- partials/auth/forgot-password.php: replaced the error_log stub with a real email — builds the
+  https-aware reset URL, resolves the user's tenant via user_restaurants, sends through
+  sendEmail() (MailerSend per-tenant key, PHP mail() fallback). Generic success message kept
+  (no account enumeration); token no longer written to logs.
+
+**Landing page (landing/default/coming-soon.php):** kicker "Launching Soon" → "Native Version";
+h1 + title "Coming Soon" → "Apache-Bootstrap-PHP-HTMX"; removed the Make a Reservation button
+(/sms-signup.php link); footer note replaced with same-network-distribution wording (typo
+"databse/datbase" corrected to "database").
+
+**Verification:** full live lifecycle test — token created, verified, password reset, new hash
+verifies, token single-use enforced; original hash restored and test rows cleaned. php -l clean.
