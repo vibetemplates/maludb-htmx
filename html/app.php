@@ -21,8 +21,9 @@ if (!empty($_SESSION['current_restaurant_id'])) {
     }
 }
 // Header title shows the Display Name from Professional Settings
-// (professional_profiles.display_name), falling back to the business name.
-$headerDisplayName = $businessName;
+// (professional_profiles.display_name). Fallback avoids the restaurants
+// table — the template should lean on it as little as possible.
+$headerDisplayName = 'Company Not Setup';
 if (!empty($_SESSION['current_restaurant_id'])) {
     try {
         $dnStmt = db()->prepare("SELECT display_name FROM professional_profiles WHERE restaurant_id = ?");

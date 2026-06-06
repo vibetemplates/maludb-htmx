@@ -3372,3 +3372,11 @@ settings page edits), falling back to `$businessName` when no profile row / blan
 error. Title tag and business switcher still use `$businessName`.
 
 **Verification:** php -l clean; display_name query exercised against live Postgres.
+
+## 2026-06-06 — Header title fallback: "Company Not Setup"
+
+**Prompt:** "Make the fallback \"Company Not Setup\" because we want to use the restaurants table in the template as little as possible."
+
+**Change:** `html/app.php` — `$headerDisplayName` now initializes to 'Company Not Setup' instead
+of `$businessName` (session restaurant name), so the header only shows a real name when
+`professional_profiles.display_name` is set.
