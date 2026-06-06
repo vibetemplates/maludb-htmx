@@ -448,6 +448,7 @@ chain incl. the ON CONFLICT (company_id, setting_key) upsert (transaction rolled
 Decisions (Ed): public repo, fresh history (single initial commit), strip process
 artifacts (tasks/, docs/activity.md), stale product docs, AND the orphaned legacy
 modules (finishing template-conversion Phase 3 in THIS repo first, then exporting).
+Also excluded from the release per Ed: design/ (commercial theme — license risk).
 
 ## Phase A — finish legacy removal in this repo
 - [x] A1. Delete orphan partials: platform/, billing/, messages/, events/; settings/
@@ -476,10 +477,31 @@ modules (finishing template-conversion Phase 3 in THIS repo first, then exportin
 - [x] A9. Update activity.md; commit & push to vibetemplates/maludb-htmx
 
 ## Phase B — release export
-- [ ] B1. Secrets scan of the tracked tree (DB/Google/Retell/OpenAI/Twilio patterns)
-- [ ] B2. git archive HEAD → staging dir; remove tasks/ and docs/activity.md
-- [ ] B3. Fresh git init, single "Initial release" commit, push to
+- [x] B1. Secrets scan of the tracked tree (DB/Google/Retell/OpenAI/Twilio patterns)
+- [x] B2. git archive HEAD → staging dir; remove tasks/ and docs/activity.md
+- [x] B3. Fresh git init, single "Initial release" commit, push to
       https://github.com/maludb/native-lamp-vibetemplate.git (main)
 
 ## Review
-*(to be completed)*
+
+**Phase A (this repo, commits ae8f72e + 1c22e89):** removed ~300 orphaned files —
+four legacy partials generations, 33 legacy settings pages, landing/zozocal, cron,
+api/{retell,sms,mcp,email}, scripts, 13 legacy helpers, 16 unused models, stale
+docs and 23 legacy SQL files, stray root files (theme contact form, relay SQL,
+log viewer). Refactors: voiceFixDate inlined into professional-voice-api (the
+api/v1 booking engine), notifications.php slimmed to sendEmail(), twilio.php on
+getCompanySetting, all deprecated tenant aliases dropped, dashboard billing block
+removed (queried legacy tables), README deduped + install steps corrected.
+Verified: php -l sweep clean; authenticated HTTP smoke test — 14 nav targets +
+9 memory pages all 200 with zero PHP/SQL errors; landing/default restored after
+catching that index.php falls back to it.
+
+**Phase B:** secrets scan clean (env-based config.php; FullCalendar demo API key
+replaced with placeholder in html/assets + assets_home; design/ copy left
+untouched per CLAUDE.md but excluded from release). Exported git archive HEAD
+minus tasks/, design/, docs/activity.md → fresh repo, single commit.
+
+**Released:** github.com/maludb/native-lamp-vibetemplate @ 6aa12df
+("Initial release", 507 files, main). Pushed via the working repo (credential
+helper would not engage from /tmp). This working repo keeps full history,
+design/, tasks/, and activity.md.
