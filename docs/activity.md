@@ -3229,3 +3229,17 @@ page into the database for the url of https://zozocal.com"
   - `_scaffold.php` — shared CRUD scaffold used by all six entities: list view (header, New button, search box, table with empty state), create/edit Bootstrap modal (Name + Description placeholder fields), save and delete handlers. Each data operation has a clearly marked "MALUDB SQL HERE" block; until wired, actions return informational alerts.
   - `projects.php`, `people.php`, `episodes.php`, `documents.php`, `subjects.php`, `verbs.php` — thin entity configs (title, icon, list columns) including the scaffold.
 - All files pass `php -l`; every element carries a unique id (e.g. projects-btn-new, people-table, episodes-modal).
+
+## 2026-06-06 — Projects Memory Element Wired to MaluDB
+
+**Prompt:** "This is a PHP code for the 'projects' endpoint. Please read integrated it into the projects item: [/v1/projects endpoint code with maludb_project view SQL]"
+
+**Changes:**
+- `html/partials/memory/projects.php` — replaced the placeholder scaffold with a full MaluDB-wired implementation, adapting the /v1/projects REST endpoint to the HTMX partial pattern:
+  - List: SELECT from `maludb_project` view (subject_id→id, canonical_name→name, description, classifier_md, archived_at), ILIKE search on name/description wired to the live search box (400ms debounce), ORDER BY canonical_name LIMIT 200.
+  - Create: endpoint's INSERT INTO `maludb_subject` with subject_type='project' and MAX(subject_id)+1 id assignment.
+  - Update (PROVISIONAL — inferred): UPDATE canonical_name/description/classifier_md WHERE subject_id AND subject_type='project'.
+  - Archive/Restore (PROVISIONAL — inferred): sets/clears archived_at; delete button replaced by archive with status badges (Active/Archived) and a restore action on archived rows.
+  - Modal form now includes Name, Description, and Classifier (Markdown) fields, prefilled on edit.
+  - All operations wrapped in try/catch with visible error alerts; modal closes and the list re-renders with a success alert after save.
+- Verified against the live database: `maludb_project` view returns rows (Drajeo, Zozocal); all columns used by the provisional SQL exist on `maludb_subject`.
