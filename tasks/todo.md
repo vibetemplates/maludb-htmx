@@ -211,3 +211,47 @@ All queries verified directly against the live PostgreSQL database; slot generat
 ## Review — 2026-06-06 (Business section button stacking)
 
 - [x] Broadened `.table td .btn-icon` override to `.table td .btn { display: inline-flex; }` in kobie-custom.css — theme's global `.btn { display: flex }` stacked plain buttons in Services/Availability/Time Off table rows.
+
+## Plan — 2026-06-06 (Side nav: Documents move, Token Setup, Model Prompts)
+
+Confirmed with Ed: client tables go in the **public schema** (user-application tables, part
+of the template); `api_key` stored plaintext (never echoed back to the UI); tokens.php-style
+HTTP auth tokens are NOT needed now, but an MCP server interfacing with Retell AI is coming —
+the Token Setup page and `client_token` design should leave room for a future
+`client_api_token` (sha256-hashed, shown-once) table for MCP auth.
+
+### Todo
+- [x] 1. DDL: create `public.client_token` (LLM provider connections + API keys) and
+        `public.client_model_prompt` (per-model system prompt → FK to client_token), mirroring
+        what `v1/memory_ingest.php` reads from `LocalDatabase::modelPrompt()`. Save DDL to
+        `docs/sql/client_tokens_model_prompts.sql` and run it against the live Postgres.
+- [x] 2. `html/app.php`: move the Documents nav item (`#nav-memory-documents`) from MEMORY
+        ELEMENTS to directly below Todo List (`#nav-todos`).
+- [x] 3. `html/app.php`: remove Staff Users (`#nav-staff`); add "Token Setup"
+        (`#nav-token-setup`) in the same ADMIN slot → `/partials/settings/token-setup.php`.
+- [x] 4. `html/app.php`: add "Model Prompts" (`#nav-model-prompts`) below Verbs/Actions in
+        MEMORY ELEMENTS → `/partials/memory/model-prompts.php`.
+- [x] 5. Create `html/partials/settings/token-setup.php` — CRUD on `client_token`
+        (name, api_format openai|anthropic, base_url, api_key as password field; key masked in
+        list; modeled on the `_type-crud.php` setup-page pattern).
+- [x] 6. Create `html/partials/memory/model-prompts.php` — CRUD on `client_model_prompt`
+        (model, token dropdown, model_identifier, system_prompt, max_tokens,
+        generation_params JSON).
+- [x] 7. Log actions in docs/activity.md; commit and push.
+
+### Review
+
+All seven items complete. `v1/memory_ingest.php`'s MySQL dependency (`LocalDatabase::modelPrompt`)
+is now reproducible client-side: `public.client_token` ⋈ `public.client_model_prompt` yields the
+exact $cfg fields it passes to llm_complete(). Nav: Documents sits under Todo List, Token Setup
+(feather-key) replaced Staff Users in ADMIN, Model Prompts (feather-message-square) sits under
+Verbs/Actions. Both new pages follow the existing HTMX modal CRUD pattern with unique div ids.
+API keys: required on create, write-only thereafter (never selected back into the form), masked
+in the list. Deleting a token in use by prompts surfaces a friendly FK message.
+
+Notes:
+- `partials/settings/users.php` (Staff Users page) still exists — only the nav link was removed.
+- Future: `client_api_token` (sha256-hashed, shown-once) for the planned Retell AI MCP server,
+  to be managed from the same Token Setup page (noted in the DDL file header).
+- An in-app ingest flow (replacing POST /v1/memory/ingest) can now be built on these tables —
+  not in scope this round.

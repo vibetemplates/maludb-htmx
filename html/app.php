@@ -117,6 +117,12 @@ $appFooterLabel = 'MaluDB Design Template';
                     <span class="nxl-mtext">Todo List</span>
                   </a>
                 </li>
+                <li class="nxl-item" id="nav-memory-documents">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/documents.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                    <span class="nxl-mtext">Documents</span>
+                  </a>
+                </li>
 
                 <!-- BUSINESS section -->
                 <li class="nxl-item nxl-caption" id="nav-caption-business"><label>BUSINESS</label></li>
@@ -165,12 +171,6 @@ $appFooterLabel = 'MaluDB Design Template';
                     <span class="nxl-mtext">Events/Episodes</span>
                   </a>
                 </li>
-                <li class="nxl-item" id="nav-memory-documents">
-                  <a href="#" class="nxl-link" hx-get="/partials/memory/documents.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-file-text"></i></span>
-                    <span class="nxl-mtext">Documents</span>
-                  </a>
-                </li>
                 <li class="nxl-item" id="nav-memory-subjects">
                   <a href="#" class="nxl-link" hx-get="/partials/memory/subjects.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-box"></i></span>
@@ -181,6 +181,12 @@ $appFooterLabel = 'MaluDB Design Template';
                   <a href="#" class="nxl-link" hx-get="/partials/memory/verbs.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-zap"></i></span>
                     <span class="nxl-mtext">Verbs/Actions</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-model-prompts">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/model-prompts.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-message-square"></i></span>
+                    <span class="nxl-mtext">Model Prompts</span>
                   </a>
                 </li>
 
@@ -231,10 +237,10 @@ $appFooterLabel = 'MaluDB Design Template';
                     <span class="nxl-mtext">Notifications</span>
                   </a>
                 </li>
-                <li class="nxl-item" id="nav-staff">
-                  <a href="#" class="nxl-link" hx-get="/partials/settings/users.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-user-plus"></i></span>
-                    <span class="nxl-mtext">Staff Users</span>
+                <li class="nxl-item" id="nav-token-setup">
+                  <a href="#" class="nxl-link" hx-get="/partials/settings/token-setup.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-key"></i></span>
+                    <span class="nxl-mtext">Token Setup</span>
                   </a>
                 </li>
 

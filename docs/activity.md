@@ -3319,3 +3319,36 @@ page into the database for the url of https://zozocal.com"
 **Root cause:** the Kobie theme sets `.btn { display: flex; ... }` globally (block-level). The earlier override only targeted `.btn-icon`, but the Business pages (Services, Availability, Time Off) put plain `.btn .btn-sm` buttons directly in table cells, so they stacked. (Clients was unaffected — its buttons sit in a `d-inline-flex` wrapper.)
 
 **Change:** broadened the existing one-line override in `html/assets/css/kobie-custom.css` from `.table td .btn-icon` to `.table td .btn { display: inline-flex; }` — covers all current and future table row actions; the old `.btn-icon` case is still matched since those elements also carry `.btn`. No markup changes.
+
+## 2026-06-06 — Side nav rework + client token / model-prompt tables
+
+**Prompts:**
+1. "Move Documents from the MEMORY ELEMENTS section to below Todo List in the side nav. Remove 'Staff Users' from the side nav and add 'Token Setup' where 'Staff Users' was. In the v1/folder there is a file called tokens.php that shows how tokens are handled in the database."
+2. "IN the side nav below Verbs/Actions add 'Model Prompts' and use model-prompts.php in the v1 folder for guidance."
+3. "tokens.php was not the right source. Please look at v1/memory_ingest.php to tell me where the required structures are coming from. The maludb* views are owned by the system so we don't want client tokens stored in them. The memory_ingest.php script ingests a memory using the tokens stored locally on the API server. Since we are not using an API server we need client tables created in the client schema in postgres. Please advise."
+4. (Plan confirmation) "1. Yes, the public schema with the user's application tables. Since we are building a user application template we want them there. 2. Yes. 3. We will eventually have an MCP server to interface with Retell AI, so plan for that."
+
+**Analysis:** `v1/memory_ingest.php` reads its LLM connection + prompt from the API server's
+local MySQL via `LocalDatabase::modelPrompt($model)` (api_format, api_key, base_url,
+model_identifier, max_tokens, generation_params, system_prompt) and authenticates HTTP callers
+via the tokens.php store. Without an API server, only the model-prompt/connection store needs a
+client-side replacement (the app uses session auth); system-owned maludb_* never holds client
+tokens.
+
+**Changes:**
+- New `docs/sql/client_tokens_model_prompts.sql` — `public.client_token` (provider connection +
+  API key) and `public.client_model_prompt` (per-model system prompt, FK → client_token);
+  executed against the live Postgres. Comment notes the planned `client_api_token` table for
+  the future Retell AI MCP server.
+- `html/app.php` — moved Documents (`#nav-memory-documents`) below Todo List; replaced Staff
+  Users with Token Setup (`#nav-token-setup`, feather-key) in ADMIN; added Model Prompts
+  (`#nav-model-prompts`, feather-message-square) below Verbs/Actions in MEMORY ELEMENTS.
+- New `html/partials/settings/token-setup.php` — CRUD on client_token, modeled on the setup
+  page pattern; api_key is a password field, required on create, blank-to-keep on edit, never
+  echoed back or selected into the form; FK delete error mapped to a friendly message.
+- New `html/partials/memory/model-prompts.php` — CRUD on client_model_prompt with a token
+  dropdown, JSON validation for generation_params, and a warning when no tokens exist yet.
+
+**Verification:** php -l clean on all three files; list queries and insert/update round-trip
+exercised against live Postgres (rolled back). `partials/settings/users.php` left in place —
+only the nav link was removed.
