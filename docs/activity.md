@@ -3204,3 +3204,17 @@ page into the database for the url of https://zozocal.com"
 - `html/partials/dashboard/index.php` — rewritten as a generic design showcase: welcome header with action buttons, 4 stat cards, ApexCharts area chart with range buttons, recent-activity list, and a status-badge table. All divs carry unique ids.
 - `html/login.php` / `html/register.php` — de-branded: titles and brand links now "MaluDB"; affiliate wording removed from register subtitle.
 - All modified files pass `php -l`.
+
+## 2026-06-06 — Dashboard: Real Data, Buttons Removed
+
+**Prompt:** "In /partials/dashboard/index.php remove the Export and New Item buttons. and do not use fake data for Total Records, Active Clients, Appointments Today, and Open Tasks. Remove the 'View All' button and make recent items a real query using real data."
+
+**Changes:**
+- Removed Export and New Item header buttons and the View All link.
+- Stat cards now use real queries scoped to the current business (each wrapped in try/catch defaulting to 0):
+  - Total Records = appointments + clients + todos row counts
+  - Active Clients = professional_clients count
+  - Appointments Today = professional_appointments for CURRENT_DATE excluding cancelled
+  - Open Tasks = todos not completed
+  - Removed the fabricated trend percentages under each stat.
+- Recent Items table is now a real query: latest 5 professional_appointments LEFT JOINed to professional_clients, showing client, service, date/time, and a status badge (color mapped per status); empty state when no rows. Fake action buttons removed from rows.

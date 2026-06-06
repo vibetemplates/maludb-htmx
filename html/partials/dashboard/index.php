@@ -3,16 +3,90 @@
  * Template Dashboard — Generic Design Showcase
  *
  * The default landing screen for every user. Demonstrates the core design
- * elements of the MaluDB Design Template: stat cards, charts, tables,
- * badges, buttons, and alerts — all using the Kobie/Bootstrap 5 theme.
+ * elements of the MaluDB Design Template (stat cards, charts, tables,
+ * badges) using real data scoped to the current business.
  */
 require_once __DIR__ . '/../../../helpers/auth.php';
+require_once __DIR__ . '/../../../helpers/db.php';
 
 requireAuth();
 
 $user = get_user();
 $firstName = htmlspecialchars($user['first_name'] ?? 'there');
 $todayLabel = date('l, F j, Y');
+$businessId = currentRestaurantId();
+$pdo = db();
+
+// Safe scalar count: returns 0 if the query fails (e.g. table missing)
+$safeCount = function (string $sql, array $params) use ($pdo): int {
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    } catch (Exception $e) {
+        error_log('Dashboard stat query failed: ' . $e->getMessage());
+        return 0;
+    }
+};
+
+// --- Stat cards (real data) ---
+$appointmentCount = $safeCount(
+    "SELECT COUNT(*) FROM professional_appointments WHERE restaurant_id = ?",
+    [$businessId]
+);
+$clientCount = $safeCount(
+    "SELECT COUNT(*) FROM professional_clients WHERE restaurant_id = ?",
+    [$businessId]
+);
+$todoCount = $safeCount(
+    "SELECT COUNT(*) FROM todos WHERE restaurant_id = ?",
+    [$businessId]
+);
+
+// Total Records = all rows belonging to this business across the core tables
+$totalRecords = $appointmentCount + $clientCount + $todoCount;
+
+$appointmentsToday = $safeCount(
+    "SELECT COUNT(*) FROM professional_appointments
+      WHERE restaurant_id = ? AND appointment_date = CURRENT_DATE
+        AND status NOT IN ('cancelled')",
+    [$businessId]
+);
+
+$openTasks = $safeCount(
+    "SELECT COUNT(*) FROM todos WHERE restaurant_id = ? AND status != 'completed'",
+    [$businessId]
+);
+
+// --- Recent Items (real query: latest appointments with client names) ---
+$recentItems = [];
+try {
+    $stmt = $pdo->prepare(
+        "SELECT a.service_name, a.appointment_date, a.start_at, a.status,
+                c.first_name, c.last_name
+           FROM professional_appointments a
+           LEFT JOIN professional_clients c ON c.id = a.client_id
+          WHERE a.restaurant_id = ?
+          ORDER BY a.start_at DESC
+          LIMIT 5"
+    );
+    $stmt->execute([$businessId]);
+    $recentItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log('Dashboard recent items query failed: ' . $e->getMessage());
+}
+
+// Status -> badge style mapping
+$statusBadge = function (string $status): string {
+    $map = [
+        'confirmed' => 'bg-soft-success text-success',
+        'completed' => 'bg-soft-info text-info',
+        'pending'   => 'bg-soft-warning text-warning',
+        'cancelled' => 'bg-soft-danger text-danger',
+        'no_show'   => 'bg-soft-secondary text-secondary',
+    ];
+    return $map[$status] ?? 'bg-soft-primary text-primary';
+};
 ?>
 
 <div class="container-fluid p-4" id="dashboard-container">
@@ -22,10 +96,6 @@ $todayLabel = date('l, F j, Y');
     <div id="dashboard-header-text">
       <h4 class="fw-bold mb-1" id="dashboard-title">Welcome back, <?php echo $firstName; ?></h4>
       <p class="text-muted mb-0" id="dashboard-subtitle"><?php echo $todayLabel; ?> &mdash; MaluDB Design Template</p>
-    </div>
-    <div id="dashboard-header-actions">
-      <button class="btn btn-outline-secondary me-2" id="dashboard-btn-secondary"><i class="feather-download me-1"></i>Export</button>
-      <button class="btn btn-primary" id="dashboard-btn-primary"><i class="feather-plus me-1"></i>New Item</button>
     </div>
   </div>
 
@@ -37,11 +107,10 @@ $todayLabel = date('l, F j, Y');
           <div class="d-flex align-items-center justify-content-between" id="stat-card-1-inner">
             <div id="stat-card-1-text">
               <div class="text-muted fs-12 mb-1">Total Records</div>
-              <h5 class="fw-bold mb-0">1,248</h5>
+              <h5 class="fw-bold mb-0" id="stat-value-records"><?php echo number_format($totalRecords); ?></h5>
             </div>
             <div class="avatar-text avatar-lg bg-primary text-white rounded" id="stat-card-1-icon"><i class="feather-database"></i></div>
           </div>
-          <div class="mt-2 fs-12" id="stat-card-1-trend"><span class="text-success me-1"><i class="feather-trending-up"></i> 12.5%</span><span class="text-muted">vs last month</span></div>
         </div>
       </div>
     </div>
@@ -51,11 +120,10 @@ $todayLabel = date('l, F j, Y');
           <div class="d-flex align-items-center justify-content-between" id="stat-card-2-inner">
             <div id="stat-card-2-text">
               <div class="text-muted fs-12 mb-1">Active Clients</div>
-              <h5 class="fw-bold mb-0">86</h5>
+              <h5 class="fw-bold mb-0" id="stat-value-clients"><?php echo number_format($clientCount); ?></h5>
             </div>
             <div class="avatar-text avatar-lg bg-success text-white rounded" id="stat-card-2-icon"><i class="feather-users"></i></div>
           </div>
-          <div class="mt-2 fs-12" id="stat-card-2-trend"><span class="text-success me-1"><i class="feather-trending-up"></i> 4.2%</span><span class="text-muted">vs last month</span></div>
         </div>
       </div>
     </div>
@@ -65,11 +133,10 @@ $todayLabel = date('l, F j, Y');
           <div class="d-flex align-items-center justify-content-between" id="stat-card-3-inner">
             <div id="stat-card-3-text">
               <div class="text-muted fs-12 mb-1">Appointments Today</div>
-              <h5 class="fw-bold mb-0">14</h5>
+              <h5 class="fw-bold mb-0" id="stat-value-appointments"><?php echo number_format($appointmentsToday); ?></h5>
             </div>
             <div class="avatar-text avatar-lg bg-warning text-white rounded" id="stat-card-3-icon"><i class="feather-calendar"></i></div>
           </div>
-          <div class="mt-2 fs-12" id="stat-card-3-trend"><span class="text-danger me-1"><i class="feather-trending-down"></i> 2.1%</span><span class="text-muted">vs yesterday</span></div>
         </div>
       </div>
     </div>
@@ -79,11 +146,10 @@ $todayLabel = date('l, F j, Y');
           <div class="d-flex align-items-center justify-content-between" id="stat-card-4-inner">
             <div id="stat-card-4-text">
               <div class="text-muted fs-12 mb-1">Open Tasks</div>
-              <h5 class="fw-bold mb-0">23</h5>
+              <h5 class="fw-bold mb-0" id="stat-value-tasks"><?php echo number_format($openTasks); ?></h5>
             </div>
             <div class="avatar-text avatar-lg bg-info text-white rounded" id="stat-card-4-icon"><i class="feather-check-square"></i></div>
           </div>
-          <div class="mt-2 fs-12" id="stat-card-4-trend"><span class="text-success me-1"><i class="feather-trending-up"></i> 8 closed</span><span class="text-muted">this week</span></div>
         </div>
       </div>
     </div>
@@ -158,73 +224,39 @@ $todayLabel = date('l, F j, Y');
   <div class="row g-3" id="dashboard-table-row">
     <div class="col-12" id="table-col">
       <div class="card" id="table-card">
-        <div class="card-header d-flex align-items-center justify-content-between" id="table-card-header">
+        <div class="card-header" id="table-card-header">
           <h6 class="fw-bold mb-0" id="table-card-title">Recent Items</h6>
-          <a href="#" class="btn btn-sm btn-outline-primary" id="table-view-all">View All</a>
         </div>
         <div class="card-body p-0" id="table-card-body">
           <div class="table-responsive" id="table-responsive-wrap">
             <table class="table table-hover mb-0" id="dashboard-table">
               <thead id="dashboard-table-head">
                 <tr>
-                  <th>Name</th>
-                  <th>Category</th>
+                  <th>Client</th>
+                  <th>Service</th>
                   <th>Date</th>
                   <th>Status</th>
-                  <th class="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody id="dashboard-table-body">
-                <tr id="table-row-1">
-                  <td class="fw-semibold">Quarterly Review</td>
-                  <td>Consultation</td>
-                  <td>Jun 6, 2026</td>
-                  <td><span class="badge bg-soft-success text-success">Confirmed</span></td>
-                  <td class="text-end">
-                    <button class="btn btn-sm btn-icon" id="table-row-1-edit"><i class="feather-edit-2"></i></button>
-                    <button class="btn btn-sm btn-icon" id="table-row-1-delete"><i class="feather-trash-2"></i></button>
-                  </td>
+                <?php if (empty($recentItems)): ?>
+                <tr id="table-row-empty">
+                  <td colspan="4" class="text-center text-muted py-4">No appointments yet.</td>
                 </tr>
-                <tr id="table-row-2">
-                  <td class="fw-semibold">Initial Assessment</td>
-                  <td>Intake</td>
-                  <td>Jun 7, 2026</td>
-                  <td><span class="badge bg-soft-warning text-warning">Pending</span></td>
-                  <td class="text-end">
-                    <button class="btn btn-sm btn-icon" id="table-row-2-edit"><i class="feather-edit-2"></i></button>
-                    <button class="btn btn-sm btn-icon" id="table-row-2-delete"><i class="feather-trash-2"></i></button>
-                  </td>
+                <?php else: ?>
+                <?php foreach ($recentItems as $i => $item):
+                    $clientName = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? '')) ?: 'Unknown client';
+                    $dateLabel = !empty($item['start_at']) ? date('M j, Y g:i A', strtotime($item['start_at'])) : '';
+                    $status = $item['status'] ?? '';
+                ?>
+                <tr id="table-row-<?php echo $i + 1; ?>">
+                  <td class="fw-semibold"><?php echo htmlspecialchars($clientName); ?></td>
+                  <td><?php echo htmlspecialchars($item['service_name'] ?? ''); ?></td>
+                  <td><?php echo htmlspecialchars($dateLabel); ?></td>
+                  <td><span class="badge <?php echo $statusBadge($status); ?>"><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $status))); ?></span></td>
                 </tr>
-                <tr id="table-row-3">
-                  <td class="fw-semibold">Follow-up Session</td>
-                  <td>Standard</td>
-                  <td>Jun 8, 2026</td>
-                  <td><span class="badge bg-soft-primary text-primary">Scheduled</span></td>
-                  <td class="text-end">
-                    <button class="btn btn-sm btn-icon" id="table-row-3-edit"><i class="feather-edit-2"></i></button>
-                    <button class="btn btn-sm btn-icon" id="table-row-3-delete"><i class="feather-trash-2"></i></button>
-                  </td>
-                </tr>
-                <tr id="table-row-4">
-                  <td class="fw-semibold">Strategy Workshop</td>
-                  <td>Premium</td>
-                  <td>Jun 9, 2026</td>
-                  <td><span class="badge bg-soft-danger text-danger">Cancelled</span></td>
-                  <td class="text-end">
-                    <button class="btn btn-sm btn-icon" id="table-row-4-edit"><i class="feather-edit-2"></i></button>
-                    <button class="btn btn-sm btn-icon" id="table-row-4-delete"><i class="feather-trash-2"></i></button>
-                  </td>
-                </tr>
-                <tr id="table-row-5">
-                  <td class="fw-semibold">Team Onboarding</td>
-                  <td>Group</td>
-                  <td>Jun 10, 2026</td>
-                  <td><span class="badge bg-soft-info text-info">In Progress</span></td>
-                  <td class="text-end">
-                    <button class="btn btn-sm btn-icon" id="table-row-5-edit"><i class="feather-edit-2"></i></button>
-                    <button class="btn btn-sm btn-icon" id="table-row-5-delete"><i class="feather-trash-2"></i></button>
-                  </td>
-                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
               </tbody>
             </table>
           </div>
