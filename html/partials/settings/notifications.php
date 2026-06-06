@@ -5,7 +5,7 @@
 require_once __DIR__ . '/../../../helpers/auth.php';
 require_once __DIR__ . '/../../../helpers/db.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
-require_once __DIR__ . '/../../../helpers/availability.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 
 requireAdmin();
 $companyId = currentCompanyId();
@@ -245,16 +245,4 @@ $smsFromNumber  = getCompanySetting($companyId, 'sms_from_number', '');
         </div>
     </div>
 
-    <!-- Email Templates Link -->
-    <div class="card mb-3" id="notifications-templates-card">
-        <div class="card-body" id="notifications-templates-body">
-            <h5 class="card-title" id="notifications-templates-title">Email Templates</h5>
-            <p class="text-muted" id="notifications-templates-desc">Customize the content of notification emails.</p>
-            <button class="btn btn-outline-primary" id="notifications-templates-btn"
-                    hx-get="/partials/settings/email-templates.php"
-                    hx-target="#page-content">
-                Manage Email Templates
-            </button>
-        </div>
-    </div>
 </div>

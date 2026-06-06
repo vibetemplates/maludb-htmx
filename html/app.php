@@ -422,10 +422,6 @@ $appFooterLabel = 'MaluDB Design Template';
     <!-- Custom JS -->
     <script src="assets/js/custom.js"></script>
 
-    <!-- Retell Web SDK for browser-based voice calls -->
-    <script src="assets/js/retell-sdk-bundle.min.js"></script>
-    <script src="assets/js/retell-integration.js"></script>
-
     <!-- HTMX Navigation Handler -->
     <script>
       // Handle navigation active state

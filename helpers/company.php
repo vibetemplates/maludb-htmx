@@ -158,48 +158,11 @@ function getCompanySetting($companyId, $key, $default = null) {
     return $value;
 }
 
-/* ============================================================================
- * DEPRECATED — legacy-module support only. Remove together with the orphaned
- * domain modules (platform/, billing/, voice/SMS webhooks) in template-
- * conversion Phase 3. New code must use the company-named functions above.
- * ========================================================================== */
-
-function getRestaurantId() { return getCompanyId(); }
-function setRestaurantId($id) { setCompanyId($id); }
-function getRestaurant($id) { return getCompany($id); }
-function getRestaurantBySlug($slug) { return getCompanyBySlug($slug); }
-function getUserRestaurants($userId) { return getUserCompanies($userId); }
-function applyRestaurantTimezone($companyId): void { applyCompanyTimezone($companyId); }
-
 /**
- * Legacy (reservations module): 6-digit confirmation code.
- * Queries the legacy reservations table — untouched by the rename.
+ * Look up a company by phone number.
+ * Normalizes both the input and stored phone to digits-only for comparison.
  */
-function generateConfirmationCode(int $restaurantId, string $date): string
-{
-    $dayOfYear = str_pad((int)date('z', strtotime($date)) + 1, 3, '0', STR_PAD_LEFT);
-    $pdo = db();
-    $maxAttempts = 20;
-    for ($i = 0; $i < $maxAttempts; $i++) {
-        $suffix = str_pad(random_int(0, 999), 3, '0', STR_PAD_LEFT);
-        $code = $dayOfYear . $suffix;
-        $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM reservations WHERE restaurant_id = ? AND confirmation_code = ?"
-        );
-        $stmt->execute([$restaurantId, $code]);
-        if ((int)$stmt->fetchColumn() === 0) {
-            return $code;
-        }
-    }
-    // Extremely unlikely fallback
-    return $dayOfYear . str_pad(random_int(0, 999), 3, '0', STR_PAD_LEFT);
-}
-
-/**
- * Legacy (voice/SMS webhooks): look up a tenant by phone number.
- * Reads the companies copy so behavior matches the rest of this app.
- */
-function getRestaurantByPhone(string $phone)
+function getCompanyByPhone(string $phone)
 {
     $digits = normalizePhone($phone);
     if ($digits === '') {

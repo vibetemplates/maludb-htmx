@@ -97,65 +97,8 @@ if ($companyId) {
 
 $isInSetup = ($currentCompanyStatus === 'in-setup');
 
-// --- Billing cards: show if user is billing_user OR affiliate for this company ---
 $pdo = db();
 $userId = currentUserId();
-$showBillingCards = false;
-$billingUser = 0;
-$prepayBalance = 0.00;
-$unpaidInvoiceCount = 0;
-$unpaidInvoiceTotal = 0.00;
-$totalInvoiceCount = 0;
-
-try {
-    $billingStmt = $pdo->prepare("SELECT billing_user, prepay_balance FROM companies WHERE id = ?");
-    $billingStmt->execute([$companyId]);
-    $billingRow = $billingStmt->fetch();
-    if ($billingRow) {
-        $billingUser = (int)$billingRow['billing_user'];
-        $prepayBalance = (float)($billingRow['prepay_balance'] ?? 0);
-    }
-} catch (Exception $e) {
-    $billingStmt = $pdo->prepare("SELECT billing_user FROM companies WHERE id = ?");
-    $billingStmt->execute([$companyId]);
-    $billingRow = $billingStmt->fetch();
-    if ($billingRow) {
-        $billingUser = (int)$billingRow['billing_user'];
-    }
-}
-
-$isAffiliateForCompany = false;
-$affCheckStmt = $pdo->prepare("SELECT id FROM affiliates WHERE user_id = ?");
-$affCheckStmt->execute([$userId]);
-$affRow = $affCheckStmt->fetch();
-if ($affRow) {
-    $affRestStmt = $pdo->prepare("SELECT id FROM companies WHERE id = ? AND affiliate_id = ?");
-    $affRestStmt->execute([$companyId, $userId]);
-    $isAffiliateForCompany = (bool)$affRestStmt->fetch();
-}
-
-if ($billingUser === $userId || $isAffiliateForCompany) {
-    $showBillingCards = true;
-    try {
-        $invStmt = $pdo->prepare(
-            "SELECT COUNT(*) AS cnt, COALESCE(SUM(amount), 0) AS total
-             FROM invoices WHERE restaurant_id = ? AND status IN ('unpaid', 'overdue')"
-        );
-        $invStmt->execute([$companyId]);
-        $invRow = $invStmt->fetch();
-        $unpaidInvoiceCount = (int)$invRow['cnt'];
-        $unpaidInvoiceTotal = (float)$invRow['total'];
-
-        $totalInvStmt = $pdo->prepare("SELECT COUNT(*) FROM invoices WHERE restaurant_id = ?");
-        $totalInvStmt->execute([$companyId]);
-        $totalInvoiceCount = (int)$totalInvStmt->fetchColumn();
-    } catch (Exception $e) {
-        // invoices table may not exist yet
-    }
-}
-
-$billingUser_obj = get_user();
-$lastLogin = $billingUser_obj['last_login_at'] ?? null;
 
 // Build setup checklist when in-setup
 $setupChecklist = [];
@@ -167,32 +110,17 @@ if ($isInSetup && $companyId) {
     $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Company Profile', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-briefcase', 'link' => '/partials/professional/settings.php'];
 
-    // 2. Setup Phone Numbers
-    $s = $pdo->prepare("SELECT COUNT(*) FROM restaurant_phone_numbers WHERE restaurant_id = ? AND is_active = 1");
-    $s->execute([$companyId]);
-    $setupChecklist[] = ['label' => 'Setup Phone Numbers', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-phone', 'link' => '/partials/settings/phone-numbers.php'];
-
-    // 3. Setup Email
-    $s = $pdo->prepare("SELECT COUNT(*) FROM email_agent_prompts WHERE restaurant_id = ? AND email_address IS NOT NULL AND email_address != ''");
-    $s->execute([$companyId]);
-    $setupChecklist[] = ['label' => 'Setup Email', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-mail', 'link' => '/partials/settings/email-prompts.php'];
-
-    // 4. Add Agents
-    $s = $pdo->prepare("SELECT COUNT(*) FROM restaurant_prompts WHERE restaurant_id = ? AND agent_id IS NOT NULL AND agent_id != ''");
-    $s->execute([$companyId]);
-    $setupChecklist[] = ['label' => 'Add Agents', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-cpu', 'link' => '/partials/settings/prompts.php'];
-
-    // 5. Add Services
+    // 2. Add Services
     $s = $pdo->prepare("SELECT COUNT(*) FROM professional_services WHERE company_id = ? AND is_active = 1");
     $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Add Services', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-clipboard', 'link' => '/partials/professional/services.php'];
 
-    // 6. Setup Availability
+    // 3. Setup Availability
     $s = $pdo->prepare("SELECT COUNT(*) FROM professional_availability_rules WHERE company_id = ? AND is_active = 1");
     $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Availability', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-clock', 'link' => '/partials/professional/availability.php'];
 
-    // 7. Invite Users (at least 2 users = creator + invited)
+    // 4. Invite Users (at least 2 users = creator + invited)
     $s = $pdo->prepare("SELECT COUNT(*) FROM user_companies WHERE company_id = ? AND is_active = 1");
     $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Invite Users', 'done' => (int)$s->fetchColumn() >= 2, 'icon' => 'feather-user-plus', 'link' => '/partials/settings/users.php'];
@@ -235,75 +163,6 @@ if ($isInSetup && $companyId) {
             <?php endif; ?>
         </div>
     </div>
-
-    <?php if ($showBillingCards): ?>
-    <!-- Billing Cards -->
-    <div class="row g-3 mb-4" id="pro-dashboard-billing-row">
-        <div class="col-sm-6 col-xl-3" id="pro-dashboard-billing-welcome">
-            <div class="card border-0 shadow-sm h-100" id="pro-dashboard-billing-welcome-card">
-                <div class="card-body d-flex align-items-center" id="pro-dashboard-billing-welcome-body">
-                    <div class="avatar-md bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3" id="pro-dashboard-billing-welcome-icon">
-                        <i class="feather-user text-primary" style="font-size:24px;"></i>
-                    </div>
-                    <div id="pro-dashboard-billing-welcome-text">
-                        <h5 class="mb-1 fw-bold" id="pro-dashboard-billing-welcome-name">Welcome, <?php echo htmlspecialchars($billingUser_obj['first_name']); ?>!</h5>
-                        <small class="text-muted" id="pro-dashboard-billing-welcome-login">
-                            <?php if ($lastLogin): ?>
-                                Last login: <?php echo date('M j, Y g:ia', strtotime($lastLogin)); ?>
-                            <?php else: ?>
-                                First visit
-                            <?php endif; ?>
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3" id="pro-dashboard-billing-prepay">
-            <div class="card border-0 shadow-sm h-100" id="pro-dashboard-billing-prepay-card">
-                <div class="card-body d-flex align-items-center" id="pro-dashboard-billing-prepay-body">
-                    <div class="avatar-md bg-success bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3" id="pro-dashboard-billing-prepay-icon">
-                        <i class="feather-dollar-sign text-success" style="font-size:24px;"></i>
-                    </div>
-                    <div id="pro-dashboard-billing-prepay-text">
-                        <h3 class="mb-0 fw-bold" id="pro-dashboard-billing-prepay-amount">$<?php echo number_format($prepayBalance, 2); ?></h3>
-                        <small class="text-muted" id="pro-dashboard-billing-prepay-label">Prepay Balance</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3" id="pro-dashboard-billing-unpaid">
-            <div class="card border-0 shadow-sm h-100" id="pro-dashboard-billing-unpaid-card">
-                <div class="card-body d-flex align-items-center" id="pro-dashboard-billing-unpaid-body">
-                    <div class="avatar-md <?php echo $unpaidInvoiceCount > 0 ? 'bg-danger' : 'bg-info'; ?> bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3" id="pro-dashboard-billing-unpaid-icon">
-                        <i class="feather-alert-circle <?php echo $unpaidInvoiceCount > 0 ? 'text-danger' : 'text-info'; ?>" style="font-size:24px;"></i>
-                    </div>
-                    <div id="pro-dashboard-billing-unpaid-text">
-                        <h3 class="mb-0 fw-bold" id="pro-dashboard-billing-unpaid-count"><?php echo $unpaidInvoiceCount; ?></h3>
-                        <small class="text-muted" id="pro-dashboard-billing-unpaid-label">
-                            Unpaid Invoice<?php echo $unpaidInvoiceCount !== 1 ? 's' : ''; ?>
-                            <?php if ($unpaidInvoiceTotal > 0): ?>
-                                ($<?php echo number_format($unpaidInvoiceTotal, 2); ?>)
-                            <?php endif; ?>
-                        </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3" id="pro-dashboard-billing-invoices">
-            <div class="card border-0 shadow-sm h-100" id="pro-dashboard-billing-invoices-card">
-                <div class="card-body d-flex align-items-center" id="pro-dashboard-billing-invoices-body">
-                    <div class="avatar-md bg-secondary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center me-3" id="pro-dashboard-billing-invoices-icon">
-                        <i class="feather-file-text text-secondary" style="font-size:24px;"></i>
-                    </div>
-                    <div id="pro-dashboard-billing-invoices-text">
-                        <h3 class="mb-0 fw-bold" id="pro-dashboard-billing-invoices-count"><?php echo $totalInvoiceCount; ?></h3>
-                        <small class="text-muted" id="pro-dashboard-billing-invoices-label">Invoice History</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
 
     <?php if ($isDashboardView && $isInSetup): ?>
     <!-- Setup Checklist -->

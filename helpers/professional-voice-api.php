@@ -13,9 +13,43 @@ require_once __DIR__ . '/professional-booking.php';
 require_once __DIR__ . '/professional-notifications.php';
 
 /**
- * Reuse the restaurant voiceFixDate() for relative date words.
+ * Resolve relative date words (today, tomorrow, day names) and auto-correct
+ * past-year dates when the LLM sends the wrong year.
  */
-require_once __DIR__ . '/voice-api.php';
+function voiceFixDate(string $date): string
+{
+    $lower = strtolower(trim($date));
+
+    // Handle relative keywords
+    if ($lower === 'today') {
+        return date('Y-m-d');
+    }
+    if ($lower === 'tomorrow') {
+        return date('Y-m-d', strtotime('+1 day'));
+    }
+
+    // Handle day-of-week names (e.g. "monday", "tuesday")
+    $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    if (in_array($lower, $days)) {
+        $target = strtotime("next {$lower}");
+        // If today IS that day, use today
+        if (strtolower(date('l')) === $lower) {
+            return date('Y-m-d');
+        }
+        return date('Y-m-d', $target);
+    }
+
+    // Fallback: auto-correct past-year dates
+    $today = date('Y-m-d');
+    if ($date >= $today) {
+        return $date;
+    }
+    $corrected = date('Y') . substr($date, 4);
+    if ($corrected >= $today) {
+        return $corrected;
+    }
+    return (date('Y') + 1) . substr($date, 4);
+}
 
 /**
  * Resolve a professional profile by booking slug, apply timezone.

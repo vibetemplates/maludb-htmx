@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../helpers/auth.php';
-require_once __DIR__ . '/../../../helpers/availability.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 require_once __DIR__ . '/../../../helpers/csrf.php';
 
 requireAuth();

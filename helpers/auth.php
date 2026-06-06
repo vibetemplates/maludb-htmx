@@ -247,9 +247,6 @@ function isHost(): bool { return isStaff(); }
 function isPlatformAdmin(): bool { return isSuperAdmin(); }
 function requireOwner(): void { requireAdmin(); }
 function requirePlatformAdmin(): void { requireSuperAdmin(); }
-// Deprecated tenant-rename aliases — remove with the orphaned legacy modules
-function switchRestaurant($companyId) { return switchCompany($companyId); }
-function currentRestaurantId(): ?int { return currentCompanyId(); }
 
 function currentUserId(): int {
     session_start_once();

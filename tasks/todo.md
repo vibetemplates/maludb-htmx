@@ -440,3 +440,46 @@ chain incl. the ON CONFLICT (company_id, setting_key) upsert (transaction rolled
   screen decision #4), not part of this rename.
 - profile.php's stale "/booking/?restaurant=slug" help text replaced with a neutral
   description (the /booking module was deleted earlier).
+
+---
+
+# Plan — 2026-06-06 (First release → github.com/maludb/native-lamp-vibetemplate)
+
+Decisions (Ed): public repo, fresh history (single initial commit), strip process
+artifacts (tasks/, docs/activity.md), stale product docs, AND the orphaned legacy
+modules (finishing template-conversion Phase 3 in THIS repo first, then exporting).
+
+## Phase A — finish legacy removal in this repo
+- [x] A1. Delete orphan partials: platform/, billing/, messages/, events/; settings/
+      legacy files (all except profile, save-profile, users, save-user, toggle-user,
+      user-form, notifications, token-setup); landing/; cron/; downloads/retell-*;
+      api/retell, api/sms, api/mcp, api/email; html root call/demo/info/sms-signup/
+      test-db/test-email.php; scripts/
+- [x] A2. Delete unused helpers: meal-status, openai-email, openai-sms,
+      prospect-restaurant, retell-api, retell-auth, send-reminders,
+      send-professional-reminders, date, functions, ui
+- [x] A3. Move voiceFixDate() into professional-voice-api.php; delete voice-api.php
+      (rest of it is legacy reservation voice code)
+- [x] A4. Slim helpers/notifications.php to sendEmail() (+ twilio/company requires);
+      delete helpers/availability.php (legacy engine; getCompanySetting already
+      lives in company.php) — first verify no kept caller still uses
+      getRestaurantSetting or the legacy send* functions
+- [x] A5. Fix dead button: settings/notifications.php:254 hx-get email-templates.php
+- [x] A6. Remove deprecated alias blocks (company.php, auth.php) if no callers remain
+- [x] A7. Delete stale docs: requirements.md, old_requirements.md, design-notes.md,
+      restaurant_reservations.sql, *.docx, docs/retell-*, docs/mcp-pro-prompt-
+      snippet.md, docs/kobie-migration-verification.md, docs/migrations/,
+      docs/sql legacy files (keep install.sql, companies.sql,
+      client_tokens_model_prompts.sql)
+- [x] A8. Verify: php -l all kept files; grep for requires/links to deleted files;
+      live smoke test (login, nav targets, forgot-password sendEmail path)
+- [x] A9. Update activity.md; commit & push to vibetemplates/maludb-htmx
+
+## Phase B — release export
+- [ ] B1. Secrets scan of the tracked tree (DB/Google/Retell/OpenAI/Twilio patterns)
+- [ ] B2. git archive HEAD → staging dir; remove tasks/ and docs/activity.md
+- [ ] B3. Fresh git init, single "Initial release" commit, push to
+      https://github.com/maludb/native-lamp-vibetemplate.git (main)
+
+## Review
+*(to be completed)*

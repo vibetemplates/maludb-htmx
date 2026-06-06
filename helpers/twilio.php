@@ -1,20 +1,20 @@
 <?php
 /**
  * Twilio SMS Helper — cURL-based (no Composer dependency)
- * Reads credentials from settings table per restaurant
+ * Reads credentials from settings table per company
  */
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/availability.php'; // for getRestaurantSetting()
+require_once __DIR__ . '/company.php'; // for getCompanySetting()
 
 /**
  * Send SMS via Twilio REST API
  * @return array ['success' => bool, 'sid' => string|null, 'error' => string|null]
  */
-function twilioSend(int $restaurantId, string $to, string $body): array
+function twilioSend(int $companyId, string $to, string $body): array
 {
-    $accountSid = getRestaurantSetting($restaurantId, 'sms_api_key', '');
-    $authToken  = getRestaurantSetting($restaurantId, 'sms_api_secret', '');
-    $fromNumber = getRestaurantSetting($restaurantId, 'sms_from_number', '');
+    $accountSid = getCompanySetting($companyId, 'sms_api_key', '');
+    $authToken  = getCompanySetting($companyId, 'sms_api_secret', '');
+    $fromNumber = getCompanySetting($companyId, 'sms_from_number', '');
 
     if ($accountSid === '' || $authToken === '' || $fromNumber === '') {
         return ['success' => false, 'sid' => null, 'error' => 'Twilio credentials not configured'];
@@ -61,8 +61,8 @@ function twilioSend(int $restaurantId, string $to, string $body): array
  * Send SMS — simple wrapper used by notification system
  * @return bool
  */
-function sendSMS(int $restaurantId, string $to, string $message): bool
+function sendSMS(int $companyId, string $to, string $message): bool
 {
-    $result = twilioSend($restaurantId, $to, $message);
+    $result = twilioSend($companyId, $to, $message);
     return $result['success'];
 }

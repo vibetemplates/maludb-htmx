@@ -73,9 +73,7 @@ This template is designed to be driven by Claude Code. The workflow rules live i
 
 - `CLAUDE.md` — Claude Code workflow rules for this repository
 - `tech-stack.md` — Full technology stack documentation
-- `database-documentation.md` — Database schema documentation
-- `tasks/todo.md` — Current plan and progress
-- `docs/activity.md` — Chronological log of all changes
+- `docs/sql/install.sql` — Database installation script (schema + default admin seed)
 
 ## About MaluDB (the platform)
 
