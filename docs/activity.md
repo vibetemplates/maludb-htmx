@@ -3156,3 +3156,13 @@ page into the database for the url of https://zozocal.com"
 - `scripts/launch-agent.php` — replaced hardcoded Retell API key and agent ID with `RETELL_API_KEY`/`RETELL_AGENT_ID` environment variables plus a startup check.
 - Added `logs/.gitkeep` and `html/downloads/.gitkeep` to preserve directory structure.
 - Verified with a credential-pattern scan over every file git would commit: clean. Remaining `agent_*` IDs in demo/call pages are public identifiers (already exposed client-side), not secrets; those pages are slated for removal in Phase 3.
+
+## 2026-06-06 — First Push to GitHub
+
+**Prompt:** "My user account is https://vibetemplates:[REDACTED-TOKEN]@github.com Use that information and run it yourself"
+
+**Actions:**
+- Configured repo-local git identity (Edward Honour / edward.honour@gmail.com).
+- Stored GitHub credentials in `~/.git-credentials` (mode 600) with `credential.helper store`.
+- Committed full codebase (1,982 files) as c35697b "Add full application codebase with credentials removed" — verified no credential files staged before committing.
+- Pushed `main` to https://github.com/vibetemplates/maludb-htmx (10db279..c35697b).
