@@ -3218,3 +3218,14 @@ page into the database for the url of https://zozocal.com"
   - Open Tasks = todos not completed
   - Removed the fabricated trend percentages under each stat.
 - Recent Items table is now a real query: latest 5 professional_appointments LEFT JOINed to professional_clients, showing client, service, date/time, and a status badge (color mapped per status); empty state when no rows. Fake action buttons removed from rows.
+
+## 2026-06-06 — Memory Elements Navigation + CRUD Placeholders
+
+**Prompt:** "In the left sidenav change the 'Messages' heading to 'Memory Elements' and make list of items 'Projects', 'People', 'Events/Episodes', 'Documents', 'Subjects/Things', 'Verbs/Actions'. Create placeholders to perform CRUD actions an I will supply you with the proper MaluDb SQL next."
+
+**Changes:**
+- `html/app.php` — MESSAGES sidebar section replaced with MEMORY ELEMENTS: Projects, People, Events/Episodes, Documents, Subjects/Things, Verbs/Actions (nav ids nav-memory-*). SMS/Voice/Email log partials remain on disk but are no longer in the nav.
+- New `html/partials/memory/` module:
+  - `_scaffold.php` — shared CRUD scaffold used by all six entities: list view (header, New button, search box, table with empty state), create/edit Bootstrap modal (Name + Description placeholder fields), save and delete handlers. Each data operation has a clearly marked "MALUDB SQL HERE" block; until wired, actions return informational alerts.
+  - `projects.php`, `people.php`, `episodes.php`, `documents.php`, `subjects.php`, `verbs.php` — thin entity configs (title, icon, list columns) including the scaffold.
+- All files pass `php -l`; every element carries a unique id (e.g. projects-btn-new, people-table, episodes-modal).

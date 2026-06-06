@@ -145,24 +145,42 @@ $appFooterLabel = 'MaluDB Design Template';
                   </a>
                 </li>
 
-                <!-- MESSAGES section -->
-                <li class="nxl-item nxl-caption" id="nav-caption-messages"><label>MESSAGES</label></li>
-                <li class="nxl-item" id="nav-sms-messages">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/sms-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-message-square"></i></span>
-                    <span class="nxl-mtext">SMS Messages</span>
+                <!-- MEMORY ELEMENTS section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-memory"><label>MEMORY ELEMENTS</label></li>
+                <li class="nxl-item" id="nav-memory-projects">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/projects.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-folder"></i></span>
+                    <span class="nxl-mtext">Projects</span>
                   </a>
                 </li>
-                <li class="nxl-item" id="nav-voice-calls">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/voice-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-phone-call"></i></span>
-                    <span class="nxl-mtext">Voice Calls</span>
+                <li class="nxl-item" id="nav-memory-people">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/people.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-users"></i></span>
+                    <span class="nxl-mtext">People</span>
                   </a>
                 </li>
-                <li class="nxl-item" id="nav-email-messages">
-                  <a href="#" class="nxl-link" hx-get="/partials/messages/email-log.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-mail"></i></span>
-                    <span class="nxl-mtext">Email Messages</span>
+                <li class="nxl-item" id="nav-memory-episodes">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/episodes.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-activity"></i></span>
+                    <span class="nxl-mtext">Events/Episodes</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-memory-documents">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/documents.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-file-text"></i></span>
+                    <span class="nxl-mtext">Documents</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-memory-subjects">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/subjects.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-box"></i></span>
+                    <span class="nxl-mtext">Subjects/Things</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-memory-verbs">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/verbs.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-zap"></i></span>
+                    <span class="nxl-mtext">Verbs/Actions</span>
                   </a>
                 </li>
 
