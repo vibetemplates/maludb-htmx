@@ -1,0 +1,18 @@
+# Local configuration with credentials — copy from the .sample.php files
+config/database.php
+config/google-oauth.php
+
+# Logs (may contain API keys and call payloads)
+logs/*
+!logs/.gitkeep
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+**/.DS_Store
+
+# Uploads / downloads
+html/downloads/*
+!html/downloads/.gitkeep

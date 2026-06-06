@@ -1,0 +1,489 @@
+<?php
+require_once '../helpers/auth.php';
+
+check_auth();
+$user = get_user();
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Task Tracker - Dashboard</title>
+
+    <!-- Meta -->
+    <meta name="description" content="Bootstrap Admin Template" />
+    <link rel="shortcut icon" href="assets/images/favicon-vt.png" />
+
+    <!-- *************
+			************ CSS Files *************
+		************* -->
+    <link rel="stylesheet" href="assets/fonts/bootstrap/bootstrap-icons.css" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+
+    <!-- HTMX Library -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- *************
+			************ Vendor Css Files *************
+		************ -->
+
+    <!-- Scrollbar CSS -->
+    <link rel="stylesheet" href="assets/vendor/overlay-scroll/OverlayScrollbars.min.css" />
+  </head>
+
+  <body>
+
+    <!-- Page wrapper starts -->
+    <div class="page-wrapper">
+
+      <!-- Main container starts -->
+      <div class="main-container">
+
+        <!-- Sidebar wrapper starts -->
+        <nav id="sidebar" class="sidebar-wrapper">
+
+          <!-- App brand starts -->
+          <div class="app-brand p-3 mb-3">
+            <a href="index.php">
+              <img src="assets/images/logo.png" class="logo" alt="Bootstrap Vibe Template" />
+            </a>
+          </div>
+          <!-- App brand ends -->
+
+          <!-- Sidebar menu starts -->
+          <div class="sidebarMenuScroll">
+            <ul class="sidebar-menu" id="sidebar-menu">
+              <li id="nav-dashboard" class="active current-page">
+                <a href="#" hx-get="/partials/dashboard/index.php" hx-target="#page-content">
+                  <i class="bi bi-laptop"></i>
+                  <span class="menu-text">Dashboard</span>
+                </a>
+              </li>
+              <li id="nav-my-tasks">
+                <a href="#" hx-get="/partials/tasks/my-tasks.php" hx-target="#page-content">
+                  <i class="bi bi-check-circle"></i>
+                  <span class="menu-text">My Tasks</span>
+                </a>
+              </li>
+              <li id="nav-team-tasks">
+                <a href="#" hx-get="/partials/tasks/team-tasks.php" hx-target="#page-content">
+                  <i class="bi bi-people"></i>
+                  <span class="menu-text">Team Tasks</span>
+                </a>
+              </li>
+              <li id="nav-my-team">
+                <a href="#" hx-get="/partials/team/my-team.php" hx-target="#page-content">
+                  <i class="bi bi-person-badge"></i>
+                  <span class="menu-text">My Team</span>
+                </a>
+              </li>
+              <li id="nav-kanban">
+                <a href="#" hx-get="/partials/kanban/index.php" hx-target="#page-content">
+                  <i class="bi bi-kanban"></i>
+                  <span class="menu-text">Kanban Board</span>
+                </a>
+              </li>
+              <li id="nav-calendar">
+                <a href="#" hx-get="/partials/calendar/index.php" hx-target="#page-content">
+                  <i class="bi bi-calendar-event"></i>
+                  <span class="menu-text">Calendar</span>
+                </a>
+              </li>
+              <li id="nav-activity">
+                <a href="#" hx-get="/partials/activity/index.php" hx-target="#page-content">
+                  <i class="bi bi-activity"></i>
+                  <span class="menu-text">Activity</span>
+                </a>
+              </li>
+              <li id="nav-archived-tasks">
+                <a href="#" hx-get="/partials/tasks/archived.php" hx-target="#page-content">
+                  <i class="bi bi-archive"></i>
+                  <span class="menu-text">Archived Tasks</span>
+                </a>
+              </li>
+              <?php if (is_admin()): ?>
+              <li id="nav-settings">
+                <a href="#" hx-get="/partials/settings.php" hx-target="#page-content">
+                  <i class="bi bi-gear"></i>
+                  <span class="menu-text">Settings</span>
+                </a>
+              </li>
+              <?php endif; ?>
+            </ul>
+          </div>
+          <!-- Sidebar menu ends -->
+
+          <!-- Sidebar settings starts -->
+          <div class="sidebar-settings gap-1 d-lg-flex d-none">
+            <a href="#" class="settings-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+              hx-get="/partials/tasks/my-tasks.php" hx-target="#page-content" hx-swap="innerHTML"
+              data-bs-custom-class="custom-tooltip-danger" title="My Tasks">
+              <i class="bi bi-list-check"></i>
+            </a>
+            <a href="#" class="settings-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+              hx-get="/partials/team/my-team.php" hx-target="#page-content" hx-swap="innerHTML"
+              data-bs-custom-class="custom-tooltip-warning" title="My Team">
+              <i class="bi bi-people"></i>
+            </a>
+            <a href="#" class="settings-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+              hx-get="/partials/kanban/index.php" hx-target="#page-content" hx-swap="innerHTML"
+              data-bs-custom-class="custom-tooltip-success" title="Kanban Board">
+              <i class="bi bi-kanban"></i>
+            </a>
+            <a href="#" class="settings-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+              hx-get="/partials/calendar/index.php" hx-target="#page-content" hx-swap="innerHTML"
+              data-bs-custom-class="custom-tooltip-info" title="Calendar">
+              <i class="bi bi-calendar-event"></i>
+            </a>
+            <a href="/logout.php" class="settings-icon" data-bs-toggle="tooltip" data-bs-placement="top"
+              data-bs-custom-class="custom-tooltip-secondary" title="Logout">
+              <i class="bi bi-power"></i>
+            </a>
+          </div>
+          <!-- Sidebar settings ends -->
+
+        </nav>
+        <!-- Sidebar wrapper ends -->
+
+        <!-- App container starts -->
+        <div class="app-container">
+
+          <!-- App header starts -->
+          <div class="app-header d-flex align-items-center" style="background-color:#131341">
+
+            <!-- Toggle buttons starts -->
+            <div class="d-flex">
+              <button class="pin-sidebar" style="background-color:#28387e">
+                <i class="bi bi-list lh-1" style="color:#ffffff"></i>
+              </button>
+            </div>
+            <!-- Toggle buttons ends -->
+
+            <!-- Global loading indicator -->
+            <div class="htmx-indicator ms-2" id="global-loading-indicator">
+              <div class="spinner-border spinner-border-sm text-white" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+            <!-- Global loading indicator ends -->
+
+            <!-- App brand sm starts -->
+            <div class="app-brand-sm d-lg-none d-flex">
+              <a href="index.php">
+                <img src="assets/images/logo-sm.png" class="logo" alt="HTML Bootstrap Template" />
+              </a>
+            </div>
+            <!-- App brand sm ends -->
+
+            <!-- Breadcrumb starts -->
+            <div class="d-flex align-items-center ms-3">
+              <h5 class="m-0" id="page-title" style="color:#ffffff">Task Tracker</h5>
+            </div>
+            <!-- Breadcrumb ends -->
+
+            <!-- App header actions starts -->
+            <div class="header-actions">
+
+
+  
+              <!-- User setting starts -->
+              <div class="dropdown ms-4">
+                <a id="userSettings" class="dropdown-toggle d-flex py-2 align-items-center" href="#!" role="button"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+                  <div class="text-truncate d-lg-flex flex-column d-none">
+                    <p class="text-truncate m-0" style="color:#ffffff"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></p>
+                    <span class="small opacity-50 lh-1" style="color:#ffffff"><?php echo ucfirst(htmlspecialchars($user['role'])); ?></span>
+                  </div>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg">
+                  <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/partials/settings.php" hx-target="#page-content" hx-swap="innerHTML"><i
+                      class="bi bi-gear fs-5 me-2"></i>Settings</a>
+                  <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/partials/reset-password.php" hx-target="#page-content" hx-swap="innerHTML"><i
+                      class="bi bi-slash-circle fs-5 me-2"></i>Reset Password</a>
+                  <?php if (is_admin()): ?>
+                  <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/partials/team/add-member.php" hx-target="#page-content" hx-swap="innerHTML"><i
+                      class="bi bi-person-plus fs-5 me-2"></i>Add Team Members</a>
+                  <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/partials/teams/index.php" hx-target="#page-content" hx-swap="innerHTML"><i
+                      class="bi bi-people-fill fs-5 me-2"></i>Team Management</a>
+                  <?php endif; ?>
+                  <div class="mx-3 mt-2 d-grid">
+                    <a href="/logout.php" class="btn btn-primary">Logout</a>
+                  </div>
+                </div>
+              </div>
+              <!-- User setting ends -->
+
+              <!-- Toggle sidebar starts -->
+              <div class="d-flex">
+                <button class="toggle-sidebar">
+                  <i class="bi bi-list lh-1"></i>
+                </button>
+              </div>
+              <!-- Toggle sidebar ends -->
+
+            </div>
+            <!-- App header actions ends -->
+
+          </div>
+          <!-- App header ends -->
+
+          <!-- App body starts -->
+          <div class="app-body" id="page-content" hx-get="/partials/dashboard/index.php" hx-trigger="load">
+            <!-- Content will be loaded here via HTMX -->
+          </div>
+          <!-- App body ends -->
+
+          <!-- App footer starts -->
+          <div class="app-footer">
+            <span class="small">© Vibe Templates 2025</span>
+          </div>
+          <!-- App footer ends -->
+
+        </div>
+        <!-- App container ends -->
+
+      </div>
+      <!-- Main container ends -->
+
+    </div>
+    <!-- Page wrapper ends -->
+
+    <!-- *************
+			************ JavaScript Files *************
+		************* -->
+    <!-- Required jQuery first, then Bootstrap Bundle JS -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/moment.min.js"></script>
+
+    <!-- *************
+			************ Vendor Js Files *************
+		************* -->
+
+    <!-- Overlay Scroll JS -->
+    <script src="assets/vendor/overlay-scroll/jquery.overlayScrollbars.min.js"></script>
+    <script src="assets/vendor/overlay-scroll/custom-scrollbar.js"></script>
+
+    <!-- Apex Charts - Loaded dynamically per page -->
+    <script src="assets/vendor/apex/apexcharts.min.js"></script>
+
+    <!-- Rating - Loaded dynamically per page -->
+    <script src="assets/vendor/rating/raty.js"></script>
+
+    <!-- Custom JS files -->
+    <script src="assets/js/custom.js"></script>
+
+    <!-- HTMX Navigation Handler -->
+    <script>
+      // Helper function to dynamically load scripts
+      function loadScript(src) {
+        return new Promise(function(resolve, reject) {
+          var script = document.createElement('script');
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+      }
+
+      // Initialize page content (charts, tooltips, etc.)
+      function initializePageContent() {
+        // Reinitialize Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Reinitialize rating stars if raty is available
+        if (typeof $.fn.raty === 'function') {
+          $('.readonly3').raty({ readOnly: true, score: 3 });
+          $('.readonly4').raty({ readOnly: true, score: 4 });
+          $('.readonly5').raty({ readOnly: true, score: 5 });
+        }
+
+        // Load chart scripts if dashboard elements exist
+        if (document.getElementById('visits-conversions')) {
+          loadScript('assets/vendor/apex/custom/home/visits-conversions.js');
+        }
+        if (document.getElementById('sales')) {
+          loadScript('assets/vendor/apex/custom/home/sales.js');
+        }
+        if (document.getElementById('income')) {
+          loadScript('assets/vendor/apex/custom/home/income.js');
+        }
+        if (document.getElementById('income2')) {
+          loadScript('assets/vendor/apex/custom/home/income2.js');
+        }
+        if (document.getElementById('option1') || document.getElementById('option2') || document.getElementById('option3')) {
+          loadScript('assets/vendor/apex/custom/home/sparkline.js');
+        }
+      }
+
+      // Handle navigation active state
+      document.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.target.id === 'page-content') {
+          // Remove active class from all menu items
+          document.querySelectorAll('.sidebar-menu li').forEach(function(li) {
+            li.classList.remove('active', 'current-page');
+          });
+
+          // Add active class to clicked menu item
+          const trigger = evt.detail.elt;
+          if (trigger && trigger.closest('li')) {
+            trigger.closest('li').classList.add('active', 'current-page');
+          }
+        }
+      });
+
+      // Initialize dashboard scripts after HTMX loads content
+      document.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'page-content') {
+          initializePageContent();
+        }
+      });
+
+      // Handle team switch event - reload current page
+      document.body.addEventListener('teamSwitched', function(evt) {
+        // Update team name in header
+        if (evt.detail && evt.detail.teamName) {
+          const teamNameEl = document.getElementById('selected-team-name');
+          if (teamNameEl) {
+            teamNameEl.textContent = evt.detail.teamName;
+          }
+        }
+
+        // Reload dashboard or current view
+        const pageContent = document.getElementById('page-content');
+        if (pageContent) {
+          // Find the active menu item and trigger its click
+          const activeLink = document.querySelector('.sidebar-menu li.active a');
+          if (activeLink) {
+            htmx.trigger(activeLink, 'click');
+          } else {
+            // Default to dashboard
+            htmx.ajax('GET', '/partials/dashboard/index.php', {target: '#page-content'});
+          }
+        }
+      });
+
+      // Handle notification updates
+      document.body.addEventListener('notificationUpdate', function(evt) {
+        if (evt.detail && evt.detail.count !== undefined) {
+          const badge = document.getElementById('notification-count');
+          const count = parseInt(evt.detail.count);
+
+          if (count > 0) {
+            if (badge) {
+              badge.textContent = count > 99 ? '99+' : count;
+            } else {
+              // Create badge if it doesn't exist
+              const bell = document.getElementById('notificationBell');
+              if (bell) {
+                const newBadge = document.createElement('span');
+                newBadge.id = 'notification-count';
+                newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                newBadge.textContent = count > 99 ? '99+' : count;
+                bell.appendChild(newBadge);
+              }
+            }
+          } else {
+            // Remove badge if count is 0
+            if (badge) {
+              badge.remove();
+            }
+          }
+        }
+      });
+
+      // Set global HTMX indicator
+      document.body.addEventListener('htmx:beforeRequest', function() {
+        document.getElementById('global-loading-indicator').style.display = 'block';
+      });
+
+      document.body.addEventListener('htmx:afterRequest', function() {
+        document.getElementById('global-loading-indicator').style.display = 'none';
+      });
+
+      // Handle modal events
+      document.body.addEventListener('closeModal', function() {
+        // Close any open Bootstrap modals
+        const modals = document.querySelectorAll('.modal.show');
+        modals.forEach(function(modal) {
+          const bsModal = bootstrap.Modal.getInstance(modal);
+          if (bsModal) {
+            bsModal.hide();
+          }
+        });
+        // Clear modal container
+        const container = document.getElementById('modal-container');
+        if (container) {
+          container.innerHTML = '';
+        }
+      });
+
+      // Handle task list refresh events
+      document.body.addEventListener('refreshTaskList', function() {
+        // Trigger refresh of task list table if it exists
+        const taskTable = document.getElementById('my-tasks-list-table') ||
+                         document.getElementById('team-tasks-list-table') ||
+                         document.getElementById('task-list-table');
+        if (taskTable) {
+          htmx.trigger(taskTable, 'refresh');
+        }
+      });
+
+      // Handle task created event
+      document.body.addEventListener('taskCreated', function(evt) {
+        // Close modal
+        htmx.trigger(document.body, 'closeModal');
+        // Refresh task list
+        htmx.trigger(document.body, 'refreshTaskList');
+      });
+
+      // Handle task updated event
+      document.body.addEventListener('taskUpdated', function(evt) {
+        // Refresh task list
+        htmx.trigger(document.body, 'refreshTaskList');
+      });
+
+      // Handle task deleted event
+      document.body.addEventListener('taskDeleted', function(evt) {
+        // Close modal if open
+        htmx.trigger(document.body, 'closeModal');
+        // Refresh task list
+        htmx.trigger(document.body, 'refreshTaskList');
+      });
+
+      // Auto-show modals loaded into modal-container
+      document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'modal-container') {
+          // Find any modal in the container and show it
+          const modal = evt.detail.target.querySelector('.modal');
+          if (modal) {
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+
+            // Focus on first input when modal is shown
+            modal.addEventListener('shown.bs.modal', function() {
+              const firstInput = modal.querySelector('input:not([type="hidden"]), textarea, select');
+              if (firstInput) {
+                firstInput.focus();
+              }
+            });
+
+            // Clean up on close
+            modal.addEventListener('hidden.bs.modal', function() {
+              evt.detail.target.innerHTML = '';
+            });
+          }
+        }
+      });
+    </script>
+
+    <!-- Modal Container for HTMX-loaded modals -->
+    <div id="modal-container"></div>
+  </body>
+
+</html>
