@@ -19,9 +19,12 @@
 -- everything the template needs beyond the maludb install. Idempotent:
 -- IF NOT EXISTS throughout, safe to re-run.
 --
--- Seed data: none required. Per-tenant defaults (settings rows) are inserted
--- by the registration flow; the first registered user becomes the admin of
--- their own tenant.
+-- Seed data: a default admin login and its company are created at the bottom
+-- of this script (idempotent — skipped if they already exist):
+--       email:    admin@example.com
+--       password: admin123        <-- CHANGE THIS IMMEDIATELY AFTER FIRST LOGIN
+-- Additional tenants are created by the registration flow; each registered
+-- user becomes the admin of their own company.
 --
 -- Table groups:
 --   Auth & tenancy ..... users, companies, user_companies, settings
@@ -350,7 +353,50 @@ CREATE TABLE IF NOT EXISTS client_model_prompt (
     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- ----------------------------------------------------------------------------
+-- Seed data: default admin user + default company
+--
+-- Login: admin@example.com / admin123  — CHANGE THE PASSWORD AFTER FIRST LOGIN.
+-- The password_hash below is bcrypt("admin123"); generate a replacement with:
+--       php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
+-- Idempotent: every insert no-ops if the row already exists.
+-- ----------------------------------------------------------------------------
+
+INSERT INTO users (first_name, last_name, email, password_hash, company_name,
+                   user_type, is_active)
+VALUES ('Admin', 'User', 'admin@example.com',
+        '$2y$10$QEeE65W2oM700RMYFIJD2eoIpOho0rbOQGm8im6DI3d9v8cRD4ZVS',
+        'Default Company', 'system_owner', 1)
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO companies (name, slug, email, timezone, location_type, is_active)
+VALUES ('Default Company', 'default-company', 'admin@example.com',
+        'America/Chicago', 'professional', 1)
+ON CONFLICT (slug) DO NOTHING;
+
+-- Make the admin user the admin of the default company
+INSERT INTO user_companies (user_id, company_id, role, is_active)
+SELECT u.id, c.id, 'admin', 1
+FROM users u, companies c
+WHERE u.email = 'admin@example.com' AND c.slug = 'default-company'
+ON CONFLICT (user_id, company_id) DO NOTHING;
+
+-- Default per-company settings (same keys the registration flow seeds)
+INSERT INTO settings (company_id, setting_key, setting_value)
+SELECT c.id, s.setting_key, s.setting_value
+FROM companies c,
+     (VALUES
+        ('confirmation_email_enabled', '1'),
+        ('reminder_email_enabled', '1'),
+        ('reminder_hours_before', '24'),
+        ('cancellation_email_enabled', '1'),
+        ('cancellation_policy', 'Please cancel at least 24 hours before your appointment time.')
+     ) AS s(setting_key, setting_value)
+WHERE c.slug = 'default-company'
+ON CONFLICT (company_id, setting_key) DO NOTHING;
+
 -- ============================================================================
--- Done. Register the first user through the app (/register.php) — that flow
--- creates the tenant row, the admin membership, and the default settings.
+-- Done. Log in as admin@example.com / admin123 (change the password), or
+-- register additional users through /register.php — that flow creates each
+-- user's company, admin membership, and default settings.
 -- ============================================================================
