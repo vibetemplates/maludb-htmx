@@ -81,6 +81,68 @@ Key findings:
 - [ ] Update `docs/activity.md`, commit and push
 - [ ] Add Review section below
 
+---
+
+# MaluDB Memory Pages Plan (2026-06-06)
+
+## Context
+
+`/var/www/v1` (reference copy, not deployed here) contains the 55 PHP endpoints of the
+MaluDB REST API. These define the canonical field names, SQL, and DB facades for every
+memory entity. The Memory Elements pages in `html/partials/memory/` will adapt that
+endpoint logic to the HTMX-partial pattern, exactly as was already done for Projects
+(`projects.php` ← `/v1/projects`). The live DB confirms: `maludb_person` view exists with
+the same shape as `maludb_project`; `maludb_subject_type` (13 trigger-enforced values) and
+`maludb_verb_type` (30 values) feed the type dropdowns.
+
+## Phase A — Wire the five remaining Memory Element pages
+
+- [x] **People** (`people.php` ← v1/projects pattern + `maludb_person` view): list/search
+      (canonical_name, description ILIKE), create (INSERT maludb_subject, subject_type='person'),
+      edit (name/description/classifier_md), archive/restore via archived_at — a near-clone of
+      the wired Projects page.
+- [x] **Subjects/Things** (`subjects.php` ← v1/subjects*): list with type badge +
+      linked_verbs / related_subjects counts; Type dropdown from `maludb_subject_type`;
+      create/edit (label, type, description, classifier_md); delete. Detail view (offcanvas or
+      expandable row): linked verbs + related subjects (from `maludb_subject_relationship`).
+- [x] **Verbs/Actions** (`verbs.php` ← v1/verbs*): list with linked_subjects count; Type
+      dropdown from `maludb_verb_type`; create/edit (canonical_name, type, description,
+      classifier_md); delete; detail shows linked subjects.
+- [x] **Events/Episodes** (`episodes.php` ← v1/episodes*): list (title, kind, occurred_at,
+      sensitivity, provenance) with kind filter from `maludb_episode_type`; create via
+      `maludb_register_episode(...)` facade; edit title/summary/kind/occurred_at/occurred_until/
+      sensitivity; delete. Needs a small `db_tx_core()`-style helper (transaction with
+      maludb_core on search_path) added to the partials' shared include.
+- [x] **Documents** (`documents.php` ← v1/documents*): list (title, document_type, media_type,
+      size, created_at); upload form (file + title + description + document_type picker +
+      project/subject links via `document_link_subject` graph facade); delete (document +
+      source package + graph edges). Document type dropdown from `maludb_document_type`.
+
+## Phase B — MaluDB Setup / maintenance forms (new nav group)
+
+New sidebar heading **MALUDB SETUP** under Memory Elements, partials in
+`html/partials/memory/setup/`:
+
+- [ ] **Episode Types** — full CRUD (label, description, display_order) on `maludb_episode_type`
+- [ ] **Document Types** — full CRUD on `maludb_document_type`
+- [ ] **Subject Types** — list view of `maludb_subject_type` (API is read-only; values are
+      trigger-enforced)
+- [ ] **Verb Types** — list view of `maludb_verb_type` (read-only)
+- [ ] **Attribute Templates** — the form catalog (`maludb_attribute_template`): list filtered by
+      applies_to/type_value, create (applies_to, type_value, attr_name, value_type, requirement,
+      label, unit, allowed_values, default, display_order), delete (API has no PATCH — re-create
+      to change)
+- [ ] **Memory Config** — model/embedding/prompt setup per namespace (`maludb_memory_model_config`
+      read; configure via secret_set + register provider/alias + set_model_config facades);
+      token stored encrypted, never displayed
+- [ ] *(optional, decide)* Pools, Skills, Notes/Issues, Statements review queue
+      (provenance=suggested accept/reject)
+
+## Phase C — Wrap up
+
+- [ ] Unique ids on every div (CLAUDE.md rule 11); `php -l` on all files
+- [ ] Update `docs/activity.md`; commit & push
+
 ## Review
 
 *(To be completed after work is done)*

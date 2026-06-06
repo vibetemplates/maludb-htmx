@@ -3243,3 +3243,16 @@ page into the database for the url of https://zozocal.com"
   - Modal form now includes Name, Description, and Classifier (Markdown) fields, prefilled on edit.
   - All operations wrapped in try/catch with visible error alerts; modal closes and the list re-renders with a success alert after save.
 - Verified against the live database: `maludb_project` view returns rows (Drajeo, Zozocal); all columns used by the provisional SQL exist on `maludb_subject`.
+
+## 2026-06-06 — Phase A: All Five Memory Element Pages Wired to MaluDB
+
+**Prompt:** "Please continue" (executing the MaluDB Memory Pages Plan added to tasks/todo.md, using the /var/www/v1 endpoint reference copy).
+
+**Changes:**
+- New `html/partials/memory/_db.php` — shared helpers: `maludbTxCore()` (transaction with maludb_core on search_path, mirroring v1's db_tx_core) and `maludbTypeOptions()` (type-table → dropdown options).
+- `people.php` — wired like Projects against the `maludb_person` view (subject_type='person'): list/search, create, edit, archive/restore.
+- `subjects.php` — full registry from /v1/subjects: list with type badge + linked_verbs/related_subjects counts, expandable detail row (linked verbs, related subjects with direction), create/edit with Type dropdown from `maludb_subject_type`, delete.
+- `verbs.php` — from /v1/verbs: list with linked_subjects count, detail row (linked subjects), create/edit with Type dropdown from `maludb_verb_type`, delete.
+- `episodes.php` — from /v1/episodes: list with kind filter (`maludb_episode_type`) + search, create via `maludb_register_episode(...)` facade, edit (title/kind/summary/occurred_at/occurred_until/sensitivity), delete; all view access inside maludbTxCore().
+- `documents.php` — from /v1/documents: list (title/type/media/size/created), upload modal (multipart): text files via `maludb_upload_document(...)` facade with project/subject graph linking, binary files via the v1 bytea direct-INSERT path; delete removes svpor graph edges + document + source package; Document Type dropdown from `maludb_document_type`.
+- All files pass `php -l`. Live-DB smoke test: people=3, verbs=12, episodes=4 (via search_path tx), documents=2, subject link counts correct.
