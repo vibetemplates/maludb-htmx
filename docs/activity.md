@@ -3446,3 +3446,12 @@ h1 + title "Coming Soon" → "Apache-Bootstrap-PHP-HTMX"; removed the Make a Res
 
 **Verification:** full live lifecycle test — token created, verified, password reset, new hash
 verifies, token single-use enforced; original hash restored and test rows cleaned. php -l clean.
+
+## 2026-06-06 — Login page brand logo
+
+**Prompt:** "On login.php change MaluDB to the logo found in html/assets/images/logo.png"
+
+**Change:** replaced the "MaluDB" gradient-text brand link content (`#login-brand`) with
+`<img src="/assets/images/logo.png">` (`#login-brand-logo`, 48px high, width auto). The
+`.login-brand` block styles (centering, bottom margin) still apply; the text-gradient rules are
+inert on an image. Browser title left as-is (titles cannot hold images).

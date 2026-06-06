@@ -216,7 +216,7 @@ $googleUrlLogin = google_auth_url(json_encode(['flow' => 'login', 'csrf' => $goo
     <main class="auth-minimal-wrapper" id="login-wrapper">
         <div class="auth-minimal-inner" id="login-inner">
             <div class="minimal-card-wrapper" id="login-card-wrapper">
-                <a href="/" class="login-brand" id="login-brand">MaluDB</a>
+                <a href="/" class="login-brand" id="login-brand"><img src="/assets/images/logo.png" alt="MaluDB" style="height: 48px; width: auto;" id="login-brand-logo"></a>
 
                 <div class="card mx-3 mx-sm-0" id="login-card">
                     <div class="card-body" id="login-card-body">
