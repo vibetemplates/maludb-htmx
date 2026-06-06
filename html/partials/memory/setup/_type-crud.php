@@ -89,16 +89,18 @@ $renderList = function (PDO $pdo, string $alertHtml = '') use ($stKey, $stTitle,
               <td><?php echo htmlspecialchars(mb_strimwidth((string)($row['description'] ?? ''), 0, 90, '…')); ?></td>
               <td class="text-center"><?php echo $row['display_order'] === null ? '—' : (int)$row['display_order']; ?></td>
               <td class="text-end">
-                <button class="btn btn-sm btn-icon" title="Edit"
-                        hx-get="<?php echo $selfUrl; ?>?action=form&id=<?php echo $rowId; ?>"
-                        hx-target="#modal-container" hx-swap="innerHTML"
-                        id="<?php echo $stKey; ?>-row-<?php echo $rowId; ?>-edit"><i class="feather-edit-2"></i></button>
-                <button class="btn btn-sm btn-icon" title="Delete"
-                        hx-post="<?php echo $selfUrl; ?>?action=delete"
-                        hx-vals='{"id": "<?php echo $rowId; ?>"}'
-                        hx-confirm="Delete this type from the picker list?"
-                        hx-target="#page-content" hx-swap="innerHTML"
-                        id="<?php echo $stKey; ?>-row-<?php echo $rowId; ?>-delete"><i class="feather-trash-2"></i></button>
+                <div class="d-inline-flex gap-1" id="<?php echo $stKey; ?>-row-<?php echo $rowId; ?>-actions">
+                  <button class="btn btn-sm btn-icon" title="Edit"
+                          hx-get="<?php echo $selfUrl; ?>?action=form&id=<?php echo $rowId; ?>"
+                          hx-target="#modal-container" hx-swap="innerHTML"
+                          id="<?php echo $stKey; ?>-row-<?php echo $rowId; ?>-edit"><i class="feather-edit-2"></i></button>
+                  <button class="btn btn-sm btn-icon" title="Delete"
+                          hx-post="<?php echo $selfUrl; ?>?action=delete"
+                          hx-vals='{"id": "<?php echo $rowId; ?>"}'
+                          hx-confirm="Delete this type from the picker list?"
+                          hx-target="#page-content" hx-swap="innerHTML"
+                          id="<?php echo $stKey; ?>-row-<?php echo $rowId; ?>-delete"><i class="feather-trash-2"></i></button>
+                </div>
               </td>
             </tr>
             <?php endforeach; ?>

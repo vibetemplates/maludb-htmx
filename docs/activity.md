@@ -3271,3 +3271,17 @@ page into the database for the url of https://zozocal.com"
   - `memory-config.php` — per-namespace model/embedding/prompt setup (← /v1/memory/config): reads `maludb_memory_model_config(ns)`; saving runs secret_set (token stored encrypted, never displayed/echoed) → maludb_register_model_provider → maludb_register_model_alias (base_url in runtime_params) → maludb_memory_set_model_config, all in one transaction. Prompt template validated for the {{chunk}} placeholder.
 - All files pass `php -l`. Live-DB smoke test: episode types=10, document types=10, attribute templates=8, memory config (default ns) not yet set.
 - Phase B optional items (Pools, Skills, Notes/Issues, Statements review queue) remain open pending decision.
+
+## 2026-06-06 — Fix batch: todos 500, setup CRUD/buttons, nav cleanup
+
+**Prompt:** "1. /partials/todos/list.php throws a 500 error. 2. In /partials/memory/setup/episode-types.php buttons in class=\"text-end\" are stacked and should be side by side. 3. /partials/memory/setup/episode-types.php. /partials/memory/setup/document-types.php, buttons in list are stacked and should be side by side. 4. /partials/memory/setup/subject-types.php, /partials/memory/setup/verb-types.php are read only and should be full CRUD. 5. Remove \"Memory Config\" from the side nav. 6. In side nav remove \"Reports\", \"Billing\", the title \"PLATFORM\" and all items in that section."
+
+**Changes:**
+- `html/partials/todos/list.php` — 500 root cause: MySQL-only `FIELD()` in the ORDER BY against the PostgreSQL DB (`SQLSTATE[42883]`). Replaced with a portable `CASE priority WHEN 'high' THEN 1 ...` rank expression; all three sort variants + the counts query verified live against PG.
+- `html/partials/memory/setup/_type-crud.php` — wrapped the row Edit/Delete buttons in a `d-inline-flex gap-1` div so they render side by side (fixes both episode-types and document-types lists).
+- `html/partials/memory/setup/_registry-crud.php` (new) — shared CRUD scaffold for the text-keyed registries (type/display_name/description/sort_order, optional semantic_class), keyed on the type string, lowercase duplicate guard, modal form via #modal-container, new rows created with system_defined=false.
+- `subject-types.php` / `verb-types.php` — converted from read-only to thin config includes of `_registry-crud.php` (full CRUD per user decision: system rows editable too).
+- `html/app.php` — removed nav items: Memory Config, Reports, Billing, and the entire PLATFORM section (caption + Manage Locations, Users, Products & Pricing, Subscriptions, Account Options). Partial files kept.
+- All touched files pass `php -l`.
+
+**Open issue:** the `maludb_subject_type` / `maludb_verb_type` views only grant SELECT to the app user `zozocal` (INSERT test → `42501 permission denied`; episode/document views are writable). Until the view owner runs `GRANT INSERT, UPDATE, DELETE ON maludb_subject_type, maludb_verb_type TO zozocal;`, saves/deletes on those two pages will show a clean "Save failed: permission denied" alert.

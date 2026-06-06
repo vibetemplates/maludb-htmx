@@ -146,3 +146,55 @@ New sidebar heading **MALUDB SETUP** under Memory Elements, partials in
 ## Review
 
 *(To be completed after work is done)*
+
+---
+
+# Fix Batch — 2026-06-06 (todos 500, setup CRUD/buttons, nav cleanup)
+
+## Findings
+
+- **Todos 500 root cause (confirmed):** DB is PostgreSQL, but
+  `html/partials/todos/list.php` uses MySQL-only `FIELD()` in its ORDER BY
+  (verified live: `SQLSTATE[42883] Undefined function: field(...)`).
+- **Stacked buttons:** in `html/partials/memory/setup/_type-crud.php` the
+  Edit/Delete buttons sit loose in `<td class="text-end">`; template CSS for
+  `.btn-icon` makes them stack. (Shared by episode-types & document-types.)
+- **Subject/Verb types:** `maludb_subject_type` / `maludb_verb_type` have a
+  text key (`subject_type` / `verb_type`) + `display_name`, `description`,
+  `sort_order`, `system_defined` (verb also has `semantic_class`) — different
+  shape from `_type-crud.php` (numeric id + label), so they get their own CRUD.
+
+## Todos
+
+- [x] 1. `todos/list.php`: replace `FIELD(priority,...)` with portable
+      `CASE priority WHEN 'high' THEN 1 ...` expressions (3 spots in the sort map)
+- [x] 2/3. `_type-crud.php`: wrap row action buttons in a
+      `d-inline-flex gap-1` div so they sit side by side
+      (fixes both episode-types and document-types lists)
+- [x] 4a. `subject-types.php`: full CRUD (list + modal form + save + delete),
+      keyed on `subject_type`, fields: type, display_name, description, sort_order
+- [x] 4b. `verb-types.php`: same, keyed on `verb_type`, plus `semantic_class` field
+- [x] 5. `app.php`: remove "Memory Config" nav item (file itself stays)
+- [x] 6. `app.php`: remove "Reports", "Billing", the "PLATFORM" caption and all
+      five PLATFORM items (partials stay; nav links only)
+- [x] `php -l` all touched files, update `docs/activity.md`, commit & push
+
+## Review
+
+- **Todos 500 fixed**: `FIELD()` (MySQL-only) replaced with a portable CASE rank;
+  all three sort variants + counts query verified live against PostgreSQL.
+- **Buttons side-by-side**: shared `_type-crud.php` row actions now wrapped in
+  `d-inline-flex gap-1` (episode-types + document-types).
+- **Subject/Verb Types CRUD**: new shared `_registry-crud.php` scaffold
+  (mirrors `_type-crud.php` conventions: htmx modal via `#modal-container`,
+  `closeModal` trigger, duplicate guard); both pages converted to thin config
+  includes. Full CRUD on all rows incl. system-defined (user decision);
+  new rows insert `system_defined = false`.
+- **Nav cleanup**: Memory Config, Reports, Billing, and the whole PLATFORM
+  section removed from `app.php`; the partial files were left in place.
+- **⚠ DB grants needed**: `maludb_subject_type` / `maludb_verb_type` views grant
+  only SELECT to `zozocal` (verified: INSERT → `42501 permission denied`).
+  The view owner must run
+  `GRANT INSERT, UPDATE, DELETE ON maludb_subject_type, maludb_verb_type TO zozocal;`
+  before saves/deletes on those two pages will succeed (until then they show a
+  clean "Save failed: permission denied" alert).

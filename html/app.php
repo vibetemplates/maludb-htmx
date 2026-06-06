@@ -216,12 +216,6 @@ $appFooterLabel = 'MaluDB Design Template';
                     <span class="nxl-mtext">Attribute Templates</span>
                   </a>
                 </li>
-                <li class="nxl-item" id="nav-setup-memory-config">
-                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/memory-config.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-cpu"></i></span>
-                    <span class="nxl-mtext">Memory Config</span>
-                  </a>
-                </li>
 
                 <!-- ADMIN section -->
                 <li class="nxl-item nxl-caption" id="nav-caption-admin"><label>ADMIN</label></li>
@@ -241,51 +235,6 @@ $appFooterLabel = 'MaluDB Design Template';
                   <a href="#" class="nxl-link" hx-get="/partials/settings/users.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-user-plus"></i></span>
                     <span class="nxl-mtext">Staff Users</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-reports">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/reports.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-bar-chart-2"></i></span>
-                    <span class="nxl-mtext">Reports</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-billing">
-                  <a href="#" class="nxl-link" hx-get="/partials/billing/invoices.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-credit-card"></i></span>
-                    <span class="nxl-mtext">Billing</span>
-                  </a>
-                </li>
-
-                <!-- PLATFORM section -->
-                <li class="nxl-item nxl-caption" id="nav-caption-platform"><label>PLATFORM</label></li>
-                <li class="nxl-item" id="nav-manage-businesses">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/restaurants.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                    <span class="nxl-mtext">Manage Locations</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-platform-users">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/users.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-user"></i></span>
-                    <span class="nxl-mtext">Users</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-products">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/products.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-package"></i></span>
-                    <span class="nxl-mtext">Products & Pricing</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-subscriptions">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/subscriptions.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-credit-card"></i></span>
-                    <span class="nxl-mtext">Subscriptions</span>
-                  </a>
-                </li>
-                <li class="nxl-item" id="nav-account-options">
-                  <a href="#" class="nxl-link" hx-get="/partials/platform/account-options.php" hx-target="#page-content">
-                    <span class="nxl-micon"><i class="feather-toggle-right"></i></span>
-                    <span class="nxl-mtext">Account Options</span>
                   </a>
                 </li>
 
