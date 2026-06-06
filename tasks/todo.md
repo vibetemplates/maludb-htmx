@@ -123,16 +123,16 @@ the same shape as `maludb_project`; `maludb_subject_type` (13 trigger-enforced v
 New sidebar heading **MALUDB SETUP** under Memory Elements, partials in
 `html/partials/memory/setup/`:
 
-- [ ] **Episode Types** — full CRUD (label, description, display_order) on `maludb_episode_type`
-- [ ] **Document Types** — full CRUD on `maludb_document_type`
-- [ ] **Subject Types** — list view of `maludb_subject_type` (API is read-only; values are
+- [x] **Episode Types** — full CRUD (label, description, display_order) on `maludb_episode_type`
+- [x] **Document Types** — full CRUD on `maludb_document_type`
+- [x] **Subject Types** — list view of `maludb_subject_type` (API is read-only; values are
       trigger-enforced)
-- [ ] **Verb Types** — list view of `maludb_verb_type` (read-only)
-- [ ] **Attribute Templates** — the form catalog (`maludb_attribute_template`): list filtered by
+- [x] **Verb Types** — list view of `maludb_verb_type` (read-only)
+- [x] **Attribute Templates** — the form catalog (`maludb_attribute_template`): list filtered by
       applies_to/type_value, create (applies_to, type_value, attr_name, value_type, requirement,
       label, unit, allowed_values, default, display_order), delete (API has no PATCH — re-create
       to change)
-- [ ] **Memory Config** — model/embedding/prompt setup per namespace (`maludb_memory_model_config`
+- [x] **Memory Config** — model/embedding/prompt setup per namespace (`maludb_memory_model_config`
       read; configure via secret_set + register provider/alias + set_model_config facades);
       token stored encrypted, never displayed
 - [ ] *(optional, decide)* Pools, Skills, Notes/Issues, Statements review queue

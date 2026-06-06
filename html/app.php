@@ -184,6 +184,45 @@ $appFooterLabel = 'MaluDB Design Template';
                   </a>
                 </li>
 
+                <!-- MALUDB SETUP section -->
+                <li class="nxl-item nxl-caption" id="nav-caption-maludb-setup"><label>MALUDB SETUP</label></li>
+                <li class="nxl-item" id="nav-setup-episode-types">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/episode-types.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-tag"></i></span>
+                    <span class="nxl-mtext">Episode Types</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-setup-document-types">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/document-types.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-bookmark"></i></span>
+                    <span class="nxl-mtext">Document Types</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-setup-subject-types">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/subject-types.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-grid"></i></span>
+                    <span class="nxl-mtext">Subject Types</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-setup-verb-types">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/verb-types.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-list"></i></span>
+                    <span class="nxl-mtext">Verb Types</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-setup-attribute-templates">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/attribute-templates.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-sliders"></i></span>
+                    <span class="nxl-mtext">Attribute Templates</span>
+                  </a>
+                </li>
+                <li class="nxl-item" id="nav-setup-memory-config">
+                  <a href="#" class="nxl-link" hx-get="/partials/memory/setup/memory-config.php" hx-target="#page-content">
+                    <span class="nxl-micon"><i class="feather-cpu"></i></span>
+                    <span class="nxl-mtext">Memory Config</span>
+                  </a>
+                </li>
+
                 <!-- ADMIN section -->
                 <li class="nxl-item nxl-caption" id="nav-caption-admin"><label>ADMIN</label></li>
                 <li class="nxl-item" id="nav-settings">

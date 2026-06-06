@@ -3256,3 +3256,18 @@ page into the database for the url of https://zozocal.com"
 - `episodes.php` — from /v1/episodes: list with kind filter (`maludb_episode_type`) + search, create via `maludb_register_episode(...)` facade, edit (title/kind/summary/occurred_at/occurred_until/sensitivity), delete; all view access inside maludbTxCore().
 - `documents.php` — from /v1/documents: list (title/type/media/size/created), upload modal (multipart): text files via `maludb_upload_document(...)` facade with project/subject graph linking, binary files via the v1 bytea direct-INSERT path; delete removes svpor graph edges + document + source package; Document Type dropdown from `maludb_document_type`.
 - All files pass `php -l`. Live-DB smoke test: people=3, verbs=12, episodes=4 (via search_path tx), documents=2, subject link counts correct.
+
+## 2026-06-06 — Phase B: MaluDB Setup Pages
+
+**Prompt:** "Please continue" (Phase B of the MaluDB Memory Pages Plan).
+
+**Changes:**
+- New MALUDB SETUP sidebar section in `html/app.php`: Episode Types, Document Types, Subject Types, Verb Types, Attribute Templates, Memory Config.
+- New `html/partials/memory/setup/` module:
+  - `_type-crud.php` — shared scaffold for the editable advisory type lists (label/description/display_order CRUD, case-insensitive-unique duplicate handling).
+  - `episode-types.php` / `document-types.php` — full CRUD on `maludb_episode_type` / `maludb_document_type` (← /v1/episode-types, /v1/document-types).
+  - `subject-types.php` / `verb-types.php` — read-only registries (subject types trigger-enforced; verb types show semantic_class), with System/Custom badges.
+  - `attribute-templates.php` — the form catalog (← /v1/attribute-templates): list with applies_to filter, create via `maludb_attribute_template_create(...)` facade, delete via `maludb_attribute_template_delete(...)`; no edit (API has no PATCH — re-create to change). Runs inside maludbTxCore().
+  - `memory-config.php` — per-namespace model/embedding/prompt setup (← /v1/memory/config): reads `maludb_memory_model_config(ns)`; saving runs secret_set (token stored encrypted, never displayed/echoed) → maludb_register_model_provider → maludb_register_model_alias (base_url in runtime_params) → maludb_memory_set_model_config, all in one transaction. Prompt template validated for the {{chunk}} placeholder.
+- All files pass `php -l`. Live-DB smoke test: episode types=10, document types=10, attribute templates=8, memory config (default ns) not yet set.
+- Phase B optional items (Pools, Skills, Notes/Issues, Statements review queue) remain open pending decision.
