@@ -3166,3 +3166,11 @@ page into the database for the url of https://zozocal.com"
 - Stored GitHub credentials in `~/.git-credentials` (mode 600) with `credential.helper store`.
 - Committed full codebase (1,982 files) as c35697b "Add full application codebase with credentials removed" — verified no credential files staged before committing.
 - Pushed `main` to https://github.com/vibetemplates/maludb-htmx (10db279..c35697b).
+
+## 2026-06-06 — New Template README
+
+**Prompt:** "Let's start by creating a new README.md for the respository. Change 'SalesCoach Pro — Build Prompts for Claude Code' to 'MaluDb Design Template for Claude Code'"
+
+**Changes:**
+- Rewrote `README.md` from scratch as "MaluDb Design Template for Claude Code". The old SalesCoach Pro build-prompt content was removed entirely. New content: template overview, technology stack table, repository structure, getting-started steps (copy sample configs, load schema, point Apache at html/), Claude Code workflow summary, and key document links.
+- Checked off the README item in `tasks/todo.md` Phase 1.

@@ -40,7 +40,7 @@ Key findings:
 ## Todo Items
 
 ### Phase 1 — Documentation reset
-- [ ] Replace `README.md` with template overview (stack, structure, getting started)
+- [x] Replace `README.md` with template overview — "MaluDb Design Template for Claude Code" (stack, structure, getting started, Claude Code workflow)
 - [ ] Remove stale product docs: `old_requirements.md`, `requirements.md`, `design-notes.md`, restaurant requirements (md/docx), SalesCoach prompts, `docs/retell-*`, `docs/mcp-pro-prompt-snippet.md`, `docs/kobie-migration-verification.md` (per decisions above)
 - [ ] Keep/update: `tech-stack.md`, `CLAUDE.md`, `design/` (untouched, per rules)
 - [ ] Write `docs/template-guide.md`: how to start a new project from this template
