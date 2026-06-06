@@ -3360,3 +3360,15 @@ only the nav link was removed.
 **Change:** pulled origin/main (Ed uploaded logo.png, 865x270). In `html/app.php` replaced the
 `#brand-text-lg` "MaluDB" text span with `<img src="/assets/images/logo.png">` (`#brand-logo-lg`,
 40px high, width auto). The collapsed-state `#brand-text-sm` "M" span is unchanged.
+
+## 2026-06-06 — Header title uses Professional Settings Display Name
+
+**Prompt:** "In id=\"header-title-area\" make sure the name displayed is the Display Name from /partials/professional/settings.php"
+
+**Change:** `html/app.php` — `#page-title` (inside `#header-title-area`) previously echoed
+`$businessName` from `$_SESSION['current_restaurant_name']`. Added `$headerDisplayName`: looked
+up from `professional_profiles.display_name` for the current restaurant (the same field the
+settings page edits), falling back to `$businessName` when no profile row / blank value / query
+error. Title tag and business switcher still use `$businessName`.
+
+**Verification:** php -l clean; display_name query exercised against live Postgres.

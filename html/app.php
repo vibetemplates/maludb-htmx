@@ -20,6 +20,21 @@ if (!empty($_SESSION['current_restaurant_id'])) {
         }
     }
 }
+// Header title shows the Display Name from Professional Settings
+// (professional_profiles.display_name), falling back to the business name.
+$headerDisplayName = $businessName;
+if (!empty($_SESSION['current_restaurant_id'])) {
+    try {
+        $dnStmt = db()->prepare("SELECT display_name FROM professional_profiles WHERE restaurant_id = ?");
+        $dnStmt->execute([$_SESSION['current_restaurant_id']]);
+        $dn = $dnStmt->fetchColumn();
+        if ($dn !== false && trim((string)$dn) !== '') {
+            $headerDisplayName = $dn;
+        }
+    } catch (Exception $e) {
+        error_log('Header display name lookup failed: ' . $e->getMessage());
+    }
+}
 $businesses = getUserRestaurants($user['id']);
 $hasMultipleBusinesses = count($businesses) > 1;
 
@@ -287,7 +302,7 @@ $appFooterLabel = 'MaluDB Design Template';
 
                 <!-- Page title -->
                 <div class="d-flex align-items-center" id="header-title-area">
-                  <h5 class="fw-bold text-white m-0" id="page-title"><?php echo htmlspecialchars($businessName); ?><?php if ($businessPhone): ?> <span class="fw-normal fs-6 ms-2" id="header-phone"><?php echo htmlspecialchars($businessPhone); ?></span><?php endif; ?></h5>
+                  <h5 class="fw-bold text-white m-0" id="page-title"><?php echo htmlspecialchars($headerDisplayName); ?><?php if ($businessPhone): ?> <span class="fw-normal fs-6 ms-2" id="header-phone"><?php echo htmlspecialchars($businessPhone); ?></span><?php endif; ?></h5>
                 </div>
               </div>
               <!-- Header left ends -->
