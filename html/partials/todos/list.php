@@ -4,11 +4,11 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 
 requireAuth();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="todos-no-restaurant">No account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="todos-no-company">No account is currently selected.</div>';
     exit;
 }
 
@@ -16,8 +16,8 @@ $statusFilter = trim($_GET['status'] ?? '');
 $sortBy = trim($_GET['sort_by'] ?? 'due_date');
 
 // Build query
-$where = ['restaurant_id = ?', 'user_id = ?'];
-$params = [$restaurantId, $userId];
+$where = ['company_id = ?', 'user_id = ?'];
+$params = [$companyId, $userId];
 
 if ($statusFilter !== '' && in_array($statusFilter, ['pending', 'in_progress', 'completed'])) {
     $where[] = 'status = ?';
@@ -42,9 +42,9 @@ $countStmt = db()->prepare(
         SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed
      FROM todos
-     WHERE restaurant_id = ? AND user_id = ?"
+     WHERE company_id = ? AND user_id = ?"
 );
-$countStmt->execute([$restaurantId, $userId]);
+$countStmt->execute([$companyId, $userId]);
 $counts = $countStmt->fetch(PDO::FETCH_ASSOC);
 
 // Fetch todos

@@ -164,10 +164,10 @@ function professionalRenderAppointmentCard(array $appointment, string $context):
     return (string)ob_get_clean();
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-calendar-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-calendar-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -249,10 +249,10 @@ switch ($view) {
 $servicesStmt = db()->prepare(
     "SELECT id, name, color, is_active
      FROM professional_services
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
      ORDER BY is_active DESC, sort_order ASC, name ASC"
 );
-$servicesStmt->execute([$restaurantId]);
+$servicesStmt->execute([$companyId]);
 $services = $servicesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $sql = "
@@ -266,10 +266,10 @@ $sql = "
         s.is_active AS service_is_active
     FROM professional_appointments a
     JOIN professional_clients c ON c.id = a.client_id
-    LEFT JOIN professional_services s ON s.id = a.service_id AND s.restaurant_id = a.restaurant_id
-    WHERE a.restaurant_id = ?
+    LEFT JOIN professional_services s ON s.id = a.service_id AND s.company_id = a.company_id
+    WHERE a.company_id = ?
 ";
-$params = [$restaurantId];
+$params = [$companyId];
 
 if ($appointmentSearch !== '') {
     $sql .= " AND a.start_at >= ?";

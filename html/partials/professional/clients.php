@@ -5,10 +5,10 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-clients-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-clients-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -24,9 +24,9 @@ $summaryStmt = db()->prepare(
         SUM(CASE WHEN phone IS NOT NULL AND phone != '' THEN 1 ELSE 0 END) AS phone_clients,
         SUM(CASE WHEN marketing_opt_in = 1 THEN 1 ELSE 0 END) AS marketing_clients
      FROM professional_clients
-     WHERE restaurant_id = ?"
+     WHERE company_id = ?"
 );
-$summaryStmt->execute([$restaurantId]);
+$summaryStmt->execute([$companyId]);
 $summary = $summaryStmt->fetch(PDO::FETCH_ASSOC) ?: [
     'total_clients' => 0,
     'email_clients' => 0,
@@ -34,8 +34,8 @@ $summary = $summaryStmt->fetch(PDO::FETCH_ASSOC) ?: [
     'marketing_clients' => 0,
 ];
 
-$where = ['c.restaurant_id = ?'];
-$params = [$restaurantId];
+$where = ['c.company_id = ?'];
+$params = [$companyId];
 
 if ($search !== '') {
     $where[] = "(c.first_name LIKE ? OR c.last_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ? OR CONCAT(c.first_name, ' ', c.last_name) LIKE ?)";
@@ -66,7 +66,7 @@ $listSql = "
             SUM(CASE WHEN status IN ('cancelled', 'no_show') THEN 1 ELSE 0 END) AS issue_appointments,
             MAX(start_at) AS last_appointment_at
         FROM professional_appointments
-        WHERE restaurant_id = ?
+        WHERE company_id = ?
         GROUP BY client_id
     ) ap ON ap.client_id = c.id
     WHERE {$whereClause}
@@ -74,7 +74,7 @@ $listSql = "
     LIMIT {$perPage} OFFSET {$offset}
 ";
 
-$listParams = array_merge([$restaurantId], $params);
+$listParams = array_merge([$companyId], $params);
 $listStmt = db()->prepare($listSql);
 $listStmt->execute($listParams);
 $clients = $listStmt->fetchAll(PDO::FETCH_ASSOC);

@@ -9,30 +9,30 @@
 require_once __DIR__ . '/db.php';
 
 /**
- * Load the professional profile configuration for a restaurant.
- * Falls back to restaurant timezone and schema defaults when a
+ * Load the professional profile configuration for a company.
+ * Falls back to company timezone and schema defaults when a
  * professional profile row has not been created yet.
  */
-function getProfessionalProfile($restaurantId) {
+function getProfessionalProfile($companyId) {
     static $cache = [];
 
-    $restaurantId = (int)$restaurantId;
-    if ($restaurantId <= 0) {
+    $companyId = (int)$companyId;
+    if ($companyId <= 0) {
         return null;
     }
 
-    if (isset($cache[$restaurantId])) {
-        return $cache[$restaurantId];
+    if (isset($cache[$companyId])) {
+        return $cache[$companyId];
     }
 
     $stmt = db()->prepare(
         "SELECT
-            r.id AS restaurant_id,
-            r.name AS restaurant_name,
-            r.slug AS restaurant_slug,
-            r.phone AS restaurant_phone,
-            r.email AS restaurant_email,
-            r.timezone AS restaurant_timezone,
+            r.id AS company_id,
+            r.name AS company_name,
+            r.slug AS company_slug,
+            r.phone AS company_phone,
+            r.email AS company_email,
+            r.timezone AS company_timezone,
             pp.id,
             pp.owner_user_id,
             pp.business_name,
@@ -52,12 +52,12 @@ function getProfessionalProfile($restaurantId) {
             pp.cancellation_policy,
             pp.cancellation_notice_hours,
             pp.is_public_booking_enabled
-         FROM restaurants r
-         LEFT JOIN professional_profiles pp ON pp.restaurant_id = r.id
+         FROM companies r
+         LEFT JOIN professional_profiles pp ON pp.company_id = r.id
          WHERE r.id = ?
          LIMIT 1"
     );
-    $stmt->execute([$restaurantId]);
+    $stmt->execute([$companyId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$row) {
@@ -66,19 +66,19 @@ function getProfessionalProfile($restaurantId) {
 
     $timezone = professionalResolveTimezone($row['timezone'] ?? '');
     if ($timezone === null) {
-        $timezone = professionalResolveTimezone($row['restaurant_timezone'] ?? '') ?: new DateTimeZone('America/New_York');
+        $timezone = professionalResolveTimezone($row['company_timezone'] ?? '') ?: new DateTimeZone('America/New_York');
     }
 
     $profile = [
         'id' => isset($row['id']) ? (int)$row['id'] : 0,
-        'restaurant_id' => (int)$row['restaurant_id'],
+        'company_id' => (int)$row['company_id'],
         'owner_user_id' => isset($row['owner_user_id']) ? (int)$row['owner_user_id'] : 0,
-        'business_name' => $row['business_name'] ?: ($row['restaurant_name'] ?? ''),
-        'display_name' => $row['display_name'] ?: ($row['restaurant_name'] ?? ''),
-        'business_phone' => $row['business_phone'] ?: ($row['restaurant_phone'] ?? null),
-        'business_email' => $row['business_email'] ?: ($row['restaurant_email'] ?? null),
+        'business_name' => $row['business_name'] ?: ($row['company_name'] ?? ''),
+        'display_name' => $row['display_name'] ?: ($row['company_name'] ?? ''),
+        'business_phone' => $row['business_phone'] ?: ($row['company_phone'] ?? null),
+        'business_email' => $row['business_email'] ?: ($row['company_email'] ?? null),
         'timezone' => $timezone->getName(),
-        'booking_slug' => $row['booking_slug'] ?: ($row['restaurant_slug'] ?? ''),
+        'booking_slug' => $row['booking_slug'] ?: ($row['company_slug'] ?? ''),
         'slot_interval_minutes' => max(5, (int)($row['slot_interval_minutes'] ?? 30)),
         'default_buffer_before_minutes' => max(0, (int)($row['default_buffer_before_minutes'] ?? 0)),
         'default_buffer_after_minutes' => max(0, (int)($row['default_buffer_after_minutes'] ?? 0)),
@@ -92,7 +92,7 @@ function getProfessionalProfile($restaurantId) {
         'is_public_booking_enabled' => isset($row['is_public_booking_enabled']) ? (int)$row['is_public_booking_enabled'] : 1,
     ];
 
-    $cache[$restaurantId] = $profile;
+    $cache[$companyId] = $profile;
     return $profile;
 }
 
@@ -107,8 +107,8 @@ function getProfessionalProfileByBookingSlug($bookingSlug) {
 
     $stmt = db()->prepare(
         "SELECT r.id
-         FROM restaurants r
-         LEFT JOIN professional_profiles pp ON pp.restaurant_id = r.id
+         FROM companies r
+         LEFT JOIN professional_profiles pp ON pp.company_id = r.id
          WHERE r.is_active = 1
            AND (
                pp.booking_slug = ?
@@ -118,35 +118,35 @@ function getProfessionalProfileByBookingSlug($bookingSlug) {
          LIMIT 1"
     );
     $stmt->execute([$bookingSlug, $bookingSlug, $bookingSlug]);
-    $restaurantId = (int)$stmt->fetchColumn();
+    $companyId = (int)$stmt->fetchColumn();
 
-    if ($restaurantId <= 0) {
+    if ($companyId <= 0) {
         return null;
     }
 
-    return getProfessionalProfile($restaurantId);
+    return getProfessionalProfile($companyId);
 }
 
 /**
- * Load one professional service for a restaurant.
+ * Load one professional service for a company.
  *
  * Options:
  * - public_booking => bool
  * - allow_inactive => bool
  */
-function getProfessionalService($restaurantId, $serviceId, array $options = []) {
-    $restaurantId = (int)$restaurantId;
+function getProfessionalService($companyId, $serviceId, array $options = []) {
+    $companyId = (int)$companyId;
     $serviceId = (int)$serviceId;
 
-    if ($restaurantId <= 0 || $serviceId <= 0) {
+    if ($companyId <= 0 || $serviceId <= 0) {
         return null;
     }
 
     $publicBooking = !empty($options['public_booking']);
     $allowInactive = !empty($options['allow_inactive']);
 
-    $query = "SELECT * FROM professional_services WHERE restaurant_id = ? AND id = ?";
-    $params = [$restaurantId, $serviceId];
+    $query = "SELECT * FROM professional_services WHERE company_id = ? AND id = ?";
+    $params = [$companyId, $serviceId];
 
     if (!$allowInactive) {
         $query .= " AND is_active = 1";
@@ -166,7 +166,7 @@ function getProfessionalService($restaurantId, $serviceId, array $options = []) 
         return null;
     }
 
-    $profile = getProfessionalProfile($restaurantId);
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return null;
     }
@@ -183,7 +183,7 @@ function getProfessionalService($restaurantId, $serviceId, array $options = []) 
 
     return [
         'id' => (int)$row['id'],
-        'restaurant_id' => (int)$row['restaurant_id'],
+        'company_id' => (int)$row['company_id'],
         'name' => $row['name'],
         'description' => $row['description'] ?? null,
         'duration_minutes' => max(1, (int)$row['duration_minutes']),
@@ -205,8 +205,8 @@ function getProfessionalService($restaurantId, $serviceId, array $options = []) 
 /**
  * Load recurring availability windows for a local business date.
  */
-function getProfessionalAvailabilityWindowsForDate($restaurantId, $date) {
-    $profile = getProfessionalProfile($restaurantId);
+function getProfessionalAvailabilityWindowsForDate($companyId, $date) {
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return [];
     }
@@ -222,10 +222,10 @@ function getProfessionalAvailabilityWindowsForDate($restaurantId, $date) {
     $stmt = db()->prepare(
         "SELECT id, weekday, start_time, end_time, location_type, location_label
          FROM professional_availability_rules
-         WHERE restaurant_id = ? AND weekday = ? AND is_active = 1
+         WHERE company_id = ? AND weekday = ? AND is_active = 1
          ORDER BY start_time ASC, end_time ASC"
     );
-    $stmt->execute([(int)$restaurantId, $weekday]);
+    $stmt->execute([(int)$companyId, $weekday]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $windows = [];
@@ -257,8 +257,8 @@ function getProfessionalAvailabilityWindowsForDate($restaurantId, $date) {
 /**
  * Load blocked time ranges that overlap a date/time window.
  */
-function getProfessionalTimeOffBlocks($restaurantId, $rangeStart, $rangeEnd) {
-    $profile = getProfessionalProfile($restaurantId);
+function getProfessionalTimeOffBlocks($companyId, $rangeStart, $rangeEnd) {
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return [];
     }
@@ -274,13 +274,13 @@ function getProfessionalTimeOffBlocks($restaurantId, $rangeStart, $rangeEnd) {
     $stmt = db()->prepare(
         "SELECT id, starts_at, ends_at, reason, notes, is_all_day
          FROM professional_time_off
-         WHERE restaurant_id = ?
+         WHERE company_id = ?
            AND starts_at < ?
            AND ends_at > ?
          ORDER BY starts_at ASC, ends_at ASC"
     );
     $stmt->execute([
-        (int)$restaurantId,
+        (int)$companyId,
         $rangeEndObject->format('Y-m-d H:i:s'),
         $rangeStartObject->format('Y-m-d H:i:s'),
     ]);
@@ -317,8 +317,8 @@ function getProfessionalTimeOffBlocks($restaurantId, $rangeStart, $rangeEnd) {
  * Options:
  * - exclude_appointment_id => int
  */
-function getProfessionalAppointmentBlocks($restaurantId, $rangeStart, $rangeEnd, array $options = []) {
-    $profile = getProfessionalProfile($restaurantId);
+function getProfessionalAppointmentBlocks($companyId, $rangeStart, $rangeEnd, array $options = []) {
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return [];
     }
@@ -356,13 +356,13 @@ function getProfessionalAppointmentBlocks($restaurantId, $rangeStart, $rangeEnd,
             start_at - make_interval(mins => buffer_before_minutes) AS occupied_start_at,
             end_at + make_interval(mins => buffer_after_minutes) AS occupied_end_at
         FROM professional_appointments
-        WHERE restaurant_id = ?
+        WHERE company_id = ?
           AND status NOT IN ('cancelled', 'no_show')
           AND start_at - make_interval(mins => buffer_before_minutes) < ?
           AND end_at + make_interval(mins => buffer_after_minutes) > ?
     ";
     $params = [
-        (int)$restaurantId,
+        (int)$companyId,
         $rangeEndObject->format('Y-m-d H:i:s'),
         $rangeStartObject->format('Y-m-d H:i:s'),
     ];
@@ -433,8 +433,8 @@ function getProfessionalAppointmentBlocks($restaurantId, $rangeStart, $rangeEnd,
  * - exclude_appointment_id => int
  * - now => string|DateTimeInterface
  */
-function getProfessionalAvailableSlots($restaurantId, $serviceId, $date, array $options = []) {
-    $profile = getProfessionalProfile($restaurantId);
+function getProfessionalAvailableSlots($companyId, $serviceId, $date, array $options = []) {
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return [];
     }
@@ -443,7 +443,7 @@ function getProfessionalAvailableSlots($restaurantId, $serviceId, $date, array $
         return [];
     }
 
-    $service = getProfessionalService($restaurantId, $serviceId, $options);
+    $service = getProfessionalService($companyId, $serviceId, $options);
     if (!$service) {
         return [];
     }
@@ -454,7 +454,7 @@ function getProfessionalAvailableSlots($restaurantId, $serviceId, $date, array $
         return [];
     }
 
-    $windows = getProfessionalAvailabilityWindowsForDate($restaurantId, $dateObject->format('Y-m-d'));
+    $windows = getProfessionalAvailabilityWindowsForDate($companyId, $dateObject->format('Y-m-d'));
     if (empty($windows)) {
         return [];
     }
@@ -475,8 +475,8 @@ function getProfessionalAvailableSlots($restaurantId, $serviceId, $date, array $
         return [];
     }
 
-    $timeOffBlocks = getProfessionalTimeOffBlocks($restaurantId, $earliestWindowStart, $latestWindowEnd);
-    $appointmentBlocks = getProfessionalAppointmentBlocks($restaurantId, $earliestWindowStart, $latestWindowEnd, [
+    $timeOffBlocks = getProfessionalTimeOffBlocks($companyId, $earliestWindowStart, $latestWindowEnd);
+    $appointmentBlocks = getProfessionalAppointmentBlocks($companyId, $earliestWindowStart, $latestWindowEnd, [
         'exclude_appointment_id' => (int)($options['exclude_appointment_id'] ?? 0),
     ]);
 
@@ -543,8 +543,8 @@ function getProfessionalAvailableSlots($restaurantId, $serviceId, $date, array $
  * - exclude_appointment_id => int
  * - now => string|DateTimeInterface
  */
-function validateProfessionalSlot($restaurantId, $serviceId, $startAt, array $options = []) {
-    $profile = getProfessionalProfile($restaurantId);
+function validateProfessionalSlot($companyId, $serviceId, $startAt, array $options = []) {
+    $profile = getProfessionalProfile($companyId);
     if (!$profile) {
         return [
             'is_available' => false,
@@ -567,7 +567,7 @@ function validateProfessionalSlot($restaurantId, $serviceId, $startAt, array $op
         ];
     }
 
-    $service = getProfessionalService($restaurantId, $serviceId, $options);
+    $service = getProfessionalService($companyId, $serviceId, $options);
     if (!$service) {
         return [
             'is_available' => false,
@@ -592,7 +592,7 @@ function validateProfessionalSlot($restaurantId, $serviceId, $startAt, array $op
         ];
     }
 
-    $slots = getProfessionalAvailableSlots($restaurantId, $serviceId, $startAtObject->format('Y-m-d'), [
+    $slots = getProfessionalAvailableSlots($companyId, $serviceId, $startAtObject->format('Y-m-d'), [
         'include_unavailable' => true,
         'public_booking' => !empty($options['public_booking']),
         'allow_inactive' => !empty($options['allow_inactive']),

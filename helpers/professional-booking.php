@@ -12,7 +12,7 @@ require_once __DIR__ . '/professional-availability.php';
 /**
  * Load one professional appointment context by id.
  */
-function professionalGetAppointmentContextById(int $appointmentId, ?int $restaurantId = null): ?array
+function professionalGetAppointmentContextById(int $appointmentId, ?int $companyId = null): ?array
 {
     if ($appointmentId <= 0) {
         return null;
@@ -36,21 +36,21 @@ function professionalGetAppointmentContextById(int $appointmentId, ?int $restaur
             pp.cancellation_notice_hours,
             pp.default_location_type,
             pp.default_location_label,
-            r.name AS restaurant_name,
-            r.phone AS restaurant_phone,
-            r.email AS restaurant_email,
-            r.timezone AS restaurant_timezone
+            r.name AS company_name,
+            r.phone AS company_phone,
+            r.email AS company_email,
+            r.timezone AS company_timezone
         FROM professional_appointments a
         INNER JOIN professional_clients c ON c.id = a.client_id
-        INNER JOIN restaurants r ON r.id = a.restaurant_id
-        LEFT JOIN professional_profiles pp ON pp.restaurant_id = a.restaurant_id
+        INNER JOIN companies r ON r.id = a.company_id
+        LEFT JOIN professional_profiles pp ON pp.company_id = a.company_id
         WHERE a.id = ?
     ";
     $params = [$appointmentId];
 
-    if ($restaurantId !== null && $restaurantId > 0) {
-        $sql .= " AND a.restaurant_id = ?";
-        $params[] = $restaurantId;
+    if ($companyId !== null && $companyId > 0) {
+        $sql .= " AND a.company_id = ?";
+        $params[] = $companyId;
     }
 
     $sql .= " LIMIT 1";
@@ -93,13 +93,13 @@ function professionalGetAppointmentContextByConfirmation(string $bookingSlug, st
             pp.cancellation_notice_hours,
             pp.default_location_type,
             pp.default_location_label,
-            r.name AS restaurant_name,
-            r.phone AS restaurant_phone,
-            r.email AS restaurant_email,
-            r.timezone AS restaurant_timezone
+            r.name AS company_name,
+            r.phone AS company_phone,
+            r.email AS company_email,
+            r.timezone AS company_timezone
          FROM professional_profiles pp
-         INNER JOIN restaurants r ON r.id = pp.restaurant_id
-         INNER JOIN professional_appointments a ON a.restaurant_id = pp.restaurant_id
+         INNER JOIN companies r ON r.id = pp.company_id
+         INNER JOIN professional_appointments a ON a.company_id = pp.company_id
          INNER JOIN professional_clients c ON c.id = a.client_id
          WHERE pp.booking_slug = ?
            AND r.is_active = 1
@@ -157,7 +157,7 @@ function professionalGetSelfServiceRestriction(array $appointment, ?DateTimeImmu
         ];
     }
 
-    $timezoneName = $appointment['profile_timezone'] ?: ($appointment['restaurant_timezone'] ?: 'America/New_York');
+    $timezoneName = $appointment['profile_timezone'] ?: ($appointment['company_timezone'] ?: 'America/New_York');
     try {
         $timezone = new DateTimeZone($timezoneName);
     } catch (Throwable $exception) {
@@ -201,7 +201,7 @@ function professionalGetSelfServiceRestriction(array $appointment, ?DateTimeImmu
  * Insert a lightweight audit entry for professional appointments.
  */
 function professionalLogAppointmentActivity(
-    int $restaurantId,
+    int $companyId,
     ?int $userId,
     int $appointmentId,
     string $action,
@@ -210,7 +210,7 @@ function professionalLogAppointmentActivity(
     $newValue = null,
     ?string $ipAddress = null
 ): void {
-    if ($restaurantId <= 0 || $appointmentId <= 0 || $action === '') {
+    if ($companyId <= 0 || $appointmentId <= 0 || $action === '') {
         return;
     }
 
@@ -240,7 +240,7 @@ function professionalLogAppointmentActivity(
              ) VALUES (?, ?, ?, 'professional_appointment', ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
-            $restaurantId,
+            $companyId,
             $userId,
             $action,
             $appointmentId,

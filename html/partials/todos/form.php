@@ -4,14 +4,14 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 
 requireAuth();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = $_SESSION['user_id'] ?? 0;
 $todo = null;
 $editId = (int)($_GET['id'] ?? 0);
 
 if ($editId > 0) {
-    $stmt = db()->prepare("SELECT * FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
-    $stmt->execute([$editId, $restaurantId, $userId]);
+    $stmt = db()->prepare("SELECT * FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
+    $stmt->execute([$editId, $companyId, $userId]);
     $todo = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 

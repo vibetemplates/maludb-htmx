@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 
 api_require_method('GET');
 $auth = api_authenticate();
-$rid  = $auth['restaurant_id'];
+$rid  = $auth['company_id'];
 
 $startDate = api_query('start_date');
 $endDate   = api_query('end_date');
@@ -32,7 +32,7 @@ $stmt = $pdo->prepare(
             c.phone AS client_phone
      FROM professional_appointments a
      LEFT JOIN professional_clients c ON c.id = a.client_id
-     WHERE a.restaurant_id = ?
+     WHERE a.company_id = ?
        AND a.appointment_date >= ?
        AND a.appointment_date <= ?
        AND a.status IN ('pending','confirmed','completed')
@@ -101,7 +101,7 @@ $timeOff = array_map(function ($b) {
 $dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 $stmt = $pdo->prepare(
     "SELECT * FROM professional_availability_rules
-     WHERE restaurant_id = ? AND is_active = 1
+     WHERE company_id = ? AND is_active = 1
      ORDER BY weekday ASC, start_time ASC"
 );
 $stmt->execute([$rid]);

@@ -8,13 +8,13 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 requireAuth();
 requireManager();
 
-function generateProfessionalAppointmentCode(PDO $pdo, int $restaurantId): string {
+function generateProfessionalAppointmentCode(PDO $pdo, int $companyId): string {
     for ($attempt = 0; $attempt < 20; $attempt++) {
         $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM professional_appointments WHERE restaurant_id = ? AND confirmation_code = ?"
+            "SELECT COUNT(*) FROM professional_appointments WHERE company_id = ? AND confirmation_code = ?"
         );
-        $stmt->execute([$restaurantId, $code]);
+        $stmt->execute([$companyId, $code]);
         if ((int)$stmt->fetchColumn() === 0) {
             return $code;
         }
@@ -35,12 +35,12 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = currentUserId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-appointment-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-appointment-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -101,8 +101,8 @@ $isEdit = $appointmentId > 0;
 $existingAppointment = null;
 
 if ($isEdit) {
-    $existingStmt = $pdo->prepare("SELECT * FROM professional_appointments WHERE id = ? AND restaurant_id = ? LIMIT 1");
-    $existingStmt->execute([$appointmentId, $restaurantId]);
+    $existingStmt = $pdo->prepare("SELECT * FROM professional_appointments WHERE id = ? AND company_id = ? LIMIT 1");
+    $existingStmt->execute([$appointmentId, $companyId]);
     $existingAppointment = $existingStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$existingAppointment) {
@@ -111,13 +111,13 @@ if ($isEdit) {
     }
 }
 
-$profile = getProfessionalProfile($restaurantId);
+$profile = getProfessionalProfile($companyId);
 if (!$profile) {
     echo '<div class="alert alert-danger" id="professional-save-appointment-profile-error">Professional scheduling settings are not configured yet.</div>';
     exit;
 }
 
-$service = getProfessionalService($restaurantId, $serviceId, ['allow_inactive' => $isEdit]);
+$service = getProfessionalService($companyId, $serviceId, ['allow_inactive' => $isEdit]);
 if (!$service) {
     echo '<div class="alert alert-danger" id="professional-save-appointment-service-not-found">The selected service is not available.</div>';
     exit;
@@ -142,7 +142,7 @@ if (
 
 $slotValidation = null;
 if ($needsSlotValidation) {
-    $slotValidation = validateProfessionalSlot($restaurantId, $serviceId, $startAtObject->format('Y-m-d H:i:s'), [
+    $slotValidation = validateProfessionalSlot($companyId, $serviceId, $startAtObject->format('Y-m-d H:i:s'), [
         'ignore_notice' => true,
         'ignore_horizon' => true,
         'exclude_appointment_id' => $appointmentId,
@@ -172,20 +172,20 @@ try {
     $client = null;
 
     if ($clientId > 0) {
-        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND restaurant_id = ? LIMIT 1");
-        $clientStmt->execute([$clientId, $restaurantId]);
+        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND company_id = ? LIMIT 1");
+        $clientStmt->execute([$clientId, $companyId]);
         $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$client) {
             throw new RuntimeException('The selected client record was not found.');
         }
     } elseif ($email !== '') {
-        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE restaurant_id = ? AND email = ? LIMIT 1");
-        $clientStmt->execute([$restaurantId, $email]);
+        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE company_id = ? AND email = ? LIMIT 1");
+        $clientStmt->execute([$companyId, $email]);
         $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
     } elseif ($phone !== '') {
-        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE restaurant_id = ? AND phone = ? LIMIT 1");
-        $clientStmt->execute([$restaurantId, $phone]);
+        $clientStmt = $pdo->prepare("SELECT * FROM professional_clients WHERE company_id = ? AND phone = ? LIMIT 1");
+        $clientStmt->execute([$companyId, $phone]);
         $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
     }
 
@@ -198,7 +198,7 @@ try {
                 email = ?,
                 phone = ?,
                 updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
         $clientUpdateStmt->execute([
             $firstName,
@@ -206,12 +206,12 @@ try {
             $email !== '' ? $email : null,
             $phone !== '' ? $phone : null,
             $clientId,
-            $restaurantId,
+            $companyId,
         ]);
     } else {
         $clientInsertStmt = $pdo->prepare(
             "INSERT INTO professional_clients (
-                restaurant_id,
+                company_id,
                 first_name,
                 last_name,
                 email,
@@ -221,7 +221,7 @@ try {
              ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())"
         );
         $clientInsertStmt->execute([
-            $restaurantId,
+            $companyId,
             $firstName,
             $lastName,
             $email !== '' ? $email : null,
@@ -239,14 +239,14 @@ try {
                     ELSE last_appointment_at
                 END,
                 updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
-        $clientLastAppointmentStmt->execute([$clientDateValue, $clientDateValue, $clientId, $restaurantId]);
+        $clientLastAppointmentStmt->execute([$clientDateValue, $clientDateValue, $clientId, $companyId]);
     }
 
     $confirmationCode = $existingAppointment['confirmation_code'] ?? null;
     if ($confirmationCode === null || $confirmationCode === '') {
-        $confirmationCode = generateProfessionalAppointmentCode($pdo, $restaurantId);
+        $confirmationCode = generateProfessionalAppointmentCode($pdo, $companyId);
     }
 
     $cancelledAt = null;
@@ -299,7 +299,7 @@ try {
                 cancelled_at = ?,
                 completed_at = ?,
                 updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
         $updateStmt->execute([
             $professionalUserId,
@@ -330,12 +330,12 @@ try {
             $cancelledAt,
             $completedAt,
             $appointmentId,
-            $restaurantId,
+            $companyId,
         ]);
     } else {
         $insertStmt = $pdo->prepare(
             "INSERT INTO professional_appointments (
-                restaurant_id,
+                company_id,
                 professional_user_id,
                 client_id,
                 service_id,
@@ -369,7 +369,7 @@ try {
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
         );
         $insertStmt->execute([
-            $restaurantId,
+            $companyId,
             $professionalUserId,
             $clientId,
             $serviceId,

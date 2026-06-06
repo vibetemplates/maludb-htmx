@@ -29,7 +29,7 @@ if ($date === '') {
     exit;
 }
 
-$slots = getProfessionalAvailableSlots((int)$appointment['restaurant_id'], (int)$appointment['service_id'], $date, [
+$slots = getProfessionalAvailableSlots((int)$appointment['company_id'], (int)$appointment['service_id'], $date, [
     'allow_inactive' => true,
     'exclude_appointment_id' => (int)$appointment['id'],
 ]);

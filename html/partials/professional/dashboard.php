@@ -9,11 +9,11 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 
 requireAuth();
 
-$businessName = $_SESSION['current_restaurant_name'] ?? 'Professional Business';
+$businessName = $_SESSION['current_company_name'] ?? 'Professional Business';
 $todayLabel = date('l, F j, Y');
 $view = $_GET['view'] ?? 'dashboard';
-$restaurantId = currentRestaurantId();
-$professionalProfile = $restaurantId ? getProfessionalProfile($restaurantId) : null;
+$companyId = currentCompanyId();
+$professionalProfile = $companyId ? getProfessionalProfile($companyId) : null;
 $publicBookingUrl = (
     $professionalProfile
     && (int)($professionalProfile['id'] ?? 0) > 0
@@ -84,20 +84,20 @@ if (!isset($viewConfig[$view])) {
 $currentView = $viewConfig[$view];
 $isDashboardView = ($view === 'dashboard');
 
-// Check restaurant status for setup checklist
-$currentRestaurantStatus = 'active';
-if ($restaurantId) {
-    $statusStmt = db()->prepare("SELECT status FROM restaurants WHERE id = ?");
-    $statusStmt->execute([$restaurantId]);
+// Check company status for setup checklist
+$currentCompanyStatus = 'active';
+if ($companyId) {
+    $statusStmt = db()->prepare("SELECT status FROM companies WHERE id = ?");
+    $statusStmt->execute([$companyId]);
     $statusRow = $statusStmt->fetch(PDO::FETCH_ASSOC);
     if ($statusRow && !empty($statusRow['status'])) {
-        $currentRestaurantStatus = $statusRow['status'];
+        $currentCompanyStatus = $statusRow['status'];
     }
 }
 
-$isInSetup = ($currentRestaurantStatus === 'in-setup');
+$isInSetup = ($currentCompanyStatus === 'in-setup');
 
-// --- Billing cards: show if user is billing_user OR affiliate for this restaurant ---
+// --- Billing cards: show if user is billing_user OR affiliate for this company ---
 $pdo = db();
 $userId = currentUserId();
 $showBillingCards = false;
@@ -108,46 +108,46 @@ $unpaidInvoiceTotal = 0.00;
 $totalInvoiceCount = 0;
 
 try {
-    $billingStmt = $pdo->prepare("SELECT billing_user, prepay_balance FROM restaurants WHERE id = ?");
-    $billingStmt->execute([$restaurantId]);
+    $billingStmt = $pdo->prepare("SELECT billing_user, prepay_balance FROM companies WHERE id = ?");
+    $billingStmt->execute([$companyId]);
     $billingRow = $billingStmt->fetch();
     if ($billingRow) {
         $billingUser = (int)$billingRow['billing_user'];
         $prepayBalance = (float)($billingRow['prepay_balance'] ?? 0);
     }
 } catch (Exception $e) {
-    $billingStmt = $pdo->prepare("SELECT billing_user FROM restaurants WHERE id = ?");
-    $billingStmt->execute([$restaurantId]);
+    $billingStmt = $pdo->prepare("SELECT billing_user FROM companies WHERE id = ?");
+    $billingStmt->execute([$companyId]);
     $billingRow = $billingStmt->fetch();
     if ($billingRow) {
         $billingUser = (int)$billingRow['billing_user'];
     }
 }
 
-$isAffiliateForRestaurant = false;
+$isAffiliateForCompany = false;
 $affCheckStmt = $pdo->prepare("SELECT id FROM affiliates WHERE user_id = ?");
 $affCheckStmt->execute([$userId]);
 $affRow = $affCheckStmt->fetch();
 if ($affRow) {
-    $affRestStmt = $pdo->prepare("SELECT id FROM restaurants WHERE id = ? AND affiliate_id = ?");
-    $affRestStmt->execute([$restaurantId, $userId]);
-    $isAffiliateForRestaurant = (bool)$affRestStmt->fetch();
+    $affRestStmt = $pdo->prepare("SELECT id FROM companies WHERE id = ? AND affiliate_id = ?");
+    $affRestStmt->execute([$companyId, $userId]);
+    $isAffiliateForCompany = (bool)$affRestStmt->fetch();
 }
 
-if ($billingUser === $userId || $isAffiliateForRestaurant) {
+if ($billingUser === $userId || $isAffiliateForCompany) {
     $showBillingCards = true;
     try {
         $invStmt = $pdo->prepare(
             "SELECT COUNT(*) AS cnt, COALESCE(SUM(amount), 0) AS total
              FROM invoices WHERE restaurant_id = ? AND status IN ('unpaid', 'overdue')"
         );
-        $invStmt->execute([$restaurantId]);
+        $invStmt->execute([$companyId]);
         $invRow = $invStmt->fetch();
         $unpaidInvoiceCount = (int)$invRow['cnt'];
         $unpaidInvoiceTotal = (float)$invRow['total'];
 
         $totalInvStmt = $pdo->prepare("SELECT COUNT(*) FROM invoices WHERE restaurant_id = ?");
-        $totalInvStmt->execute([$restaurantId]);
+        $totalInvStmt->execute([$companyId]);
         $totalInvoiceCount = (int)$totalInvStmt->fetchColumn();
     } catch (Exception $e) {
         // invoices table may not exist yet
@@ -159,42 +159,42 @@ $lastLogin = $billingUser_obj['last_login_at'] ?? null;
 
 // Build setup checklist when in-setup
 $setupChecklist = [];
-if ($isInSetup && $restaurantId) {
+if ($isInSetup && $companyId) {
     $pdo = db();
 
-    // 1. Setup Company Profile — check name, phone, email in restaurants
-    $s = $pdo->prepare("SELECT COUNT(*) FROM restaurants WHERE id = ? AND name IS NOT NULL AND name != '' AND phone IS NOT NULL AND phone != '' AND email IS NOT NULL AND email != ''");
-    $s->execute([$restaurantId]);
+    // 1. Setup Company Profile — check name, phone, email in companies
+    $s = $pdo->prepare("SELECT COUNT(*) FROM companies WHERE id = ? AND name IS NOT NULL AND name != '' AND phone IS NOT NULL AND phone != '' AND email IS NOT NULL AND email != ''");
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Company Profile', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-briefcase', 'link' => '/partials/professional/settings.php'];
 
     // 2. Setup Phone Numbers
     $s = $pdo->prepare("SELECT COUNT(*) FROM restaurant_phone_numbers WHERE restaurant_id = ? AND is_active = 1");
-    $s->execute([$restaurantId]);
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Phone Numbers', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-phone', 'link' => '/partials/settings/phone-numbers.php'];
 
     // 3. Setup Email
     $s = $pdo->prepare("SELECT COUNT(*) FROM email_agent_prompts WHERE restaurant_id = ? AND email_address IS NOT NULL AND email_address != ''");
-    $s->execute([$restaurantId]);
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Email', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-mail', 'link' => '/partials/settings/email-prompts.php'];
 
     // 4. Add Agents
     $s = $pdo->prepare("SELECT COUNT(*) FROM restaurant_prompts WHERE restaurant_id = ? AND agent_id IS NOT NULL AND agent_id != ''");
-    $s->execute([$restaurantId]);
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Add Agents', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-cpu', 'link' => '/partials/settings/prompts.php'];
 
     // 5. Add Services
-    $s = $pdo->prepare("SELECT COUNT(*) FROM professional_services WHERE restaurant_id = ? AND is_active = 1");
-    $s->execute([$restaurantId]);
+    $s = $pdo->prepare("SELECT COUNT(*) FROM professional_services WHERE company_id = ? AND is_active = 1");
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Add Services', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-clipboard', 'link' => '/partials/professional/services.php'];
 
     // 6. Setup Availability
-    $s = $pdo->prepare("SELECT COUNT(*) FROM professional_availability_rules WHERE restaurant_id = ? AND is_active = 1");
-    $s->execute([$restaurantId]);
+    $s = $pdo->prepare("SELECT COUNT(*) FROM professional_availability_rules WHERE company_id = ? AND is_active = 1");
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Setup Availability', 'done' => (int)$s->fetchColumn() > 0, 'icon' => 'feather-clock', 'link' => '/partials/professional/availability.php'];
 
     // 7. Invite Users (at least 2 users = creator + invited)
-    $s = $pdo->prepare("SELECT COUNT(*) FROM user_restaurants WHERE restaurant_id = ? AND is_active = 1");
-    $s->execute([$restaurantId]);
+    $s = $pdo->prepare("SELECT COUNT(*) FROM user_companies WHERE company_id = ? AND is_active = 1");
+    $s->execute([$companyId]);
     $setupChecklist[] = ['label' => 'Invite Users', 'done' => (int)$s->fetchColumn() >= 2, 'icon' => 'feather-user-plus', 'link' => '/partials/settings/users.php'];
 }
 ?>
@@ -456,7 +456,7 @@ if ($isInSetup && $restaurantId) {
                         <?php echo htmlspecialchars($currentView['subtitle']); ?>
                     </p>
                     <p class="mb-3 text-muted" id="professional-placeholder-copy-secondary">
-                        This screen remains a placeholder while the remaining professional features are built, so professional users do not fall back into the restaurant interface.
+                        This screen remains a placeholder while the remaining professional features are built, so professional users do not fall back into the company interface.
                     </p>
                     <div id="professional-placeholder-actions" class="d-flex flex-wrap gap-2">
                         <a href="#" class="btn btn-primary" id="professional-placeholder-back-dashboard"

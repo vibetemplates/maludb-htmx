@@ -58,7 +58,7 @@ $restaurant = null;
 if ($queryAgentId !== '') {
     $agentStmt = db()->prepare(
         "SELECT rp.restaurant_id FROM restaurant_prompts rp
-         JOIN restaurants r ON r.id = rp.restaurant_id AND r.is_active = 1
+         JOIN companies r ON r.id = rp.restaurant_id AND r.is_active = 1
          WHERE rp.agent_id = ?
          LIMIT 1"
     );
@@ -198,7 +198,7 @@ if ($event === 'call_inbound') {
     $placeholders = implode(',', array_fill(0, count($promptKeys), '?'));
     $stmt = $pdo->prepare(
         "SELECT setting_key, setting_value FROM settings
-         WHERE restaurant_id = ? AND setting_key IN ({$placeholders})"
+         WHERE company_id = ? AND setting_key IN ({$placeholders})"
     );
     $stmt->execute(array_merge([$restaurantId], $promptKeys));
     $promptSettings = $stmt->fetchAll();

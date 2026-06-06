@@ -22,7 +22,7 @@ if (!$appointment) {
     exit;
 }
 
-$displayName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['restaurant_name']));
+$displayName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['company_name']));
 $restriction = professionalGetSelfServiceRestriction($appointment);
 $cancelled = false;
 $message = '';
@@ -44,17 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cance
                     cancelled_at = NOW(),
                     completed_at = NULL,
                     updated_at = NOW()
-                 WHERE id = ? AND restaurant_id = ?"
+                 WHERE id = ? AND company_id = ?"
             );
             $updateStmt->execute([
                 (int)$appointment['id'],
-                (int)$appointment['restaurant_id'],
+                (int)$appointment['company_id'],
             ]);
 
             $pdo->commit();
 
             professionalLogAppointmentActivity(
-                (int)$appointment['restaurant_id'],
+                (int)$appointment['company_id'],
                 null,
                 (int)$appointment['id'],
                 'self_service_cancel',

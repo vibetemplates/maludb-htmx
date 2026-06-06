@@ -24,7 +24,7 @@
 -- their own tenant.
 --
 -- Table groups:
---   Auth & tenancy ..... users, restaurants, user_restaurants, settings
+--   Auth & tenancy ..... users, companies, user_companies, settings
 --   Profile ............ professional_profiles
 --   Scheduling ......... professional_services, professional_availability_rules,
 --                        professional_time_off, professional_clients,
@@ -78,10 +78,9 @@ CREATE TABLE IF NOT EXISTS password_resets (
 );
 CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets (email);
 
--- Tenant root. Named "restaurants" for historical reasons; the template treats
--- it as the generic business/account container and leans on it as little as
--- possible (rename is tracked in the template-conversion plan).
-CREATE TABLE IF NOT EXISTS restaurants (
+-- Tenant root: the generic business/account container. (Formerly named
+-- "restaurants" — renamed to companies in the template, 2026-06-06.)
+CREATE TABLE IF NOT EXISTS companies (
     id            SERIAL PRIMARY KEY,
     name          VARCHAR(200) NOT NULL,
     slug          VARCHAR(100) NOT NULL,
@@ -102,37 +101,37 @@ CREATE TABLE IF NOT EXISTS restaurants (
     prepay_balance NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_slug UNIQUE (slug)
+    CONSTRAINT uk_companies_slug UNIQUE (slug)
 );
-CREATE INDEX IF NOT EXISTS idx_restaurants_active ON restaurants (is_active);
+CREATE INDEX IF NOT EXISTS idx_companies_active ON companies (is_active);
 
-CREATE TABLE IF NOT EXISTS user_restaurants (
-    id            SERIAL PRIMARY KEY,
-    user_id       INTEGER     NOT NULL REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    restaurant_id INTEGER     NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    role          VARCHAR(10) NOT NULL DEFAULT 'admin',
-    is_active     SMALLINT    NOT NULL DEFAULT 1,
-    created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_user_restaurant UNIQUE (user_id, restaurant_id)
+CREATE TABLE IF NOT EXISTS user_companies (
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER     NOT NULL REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id INTEGER     NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    role       VARCHAR(10) NOT NULL DEFAULT 'admin',
+    is_active  SMALLINT    NOT NULL DEFAULT 1,
+    created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_user_company UNIQUE (user_id, company_id)
 );
-CREATE INDEX IF NOT EXISTS idx_user_restaurants_restaurant ON user_restaurants (restaurant_id);
-CREATE INDEX IF NOT EXISTS idx_user_restaurants_role ON user_restaurants (role);
+CREATE INDEX IF NOT EXISTS idx_user_companies_company ON user_companies (company_id);
+CREATE INDEX IF NOT EXISTS idx_user_companies_role ON user_companies (role);
 
--- Per-tenant key/value config. The UNIQUE on (restaurant_id, setting_key) is
+-- Per-tenant key/value config. The UNIQUE on (company_id, setting_key) is
 -- required by the ON CONFLICT upserts in the settings pages.
 CREATE TABLE IF NOT EXISTS settings (
     id            SERIAL PRIMARY KEY,
-    restaurant_id INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id    INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     setting_key   VARCHAR(100) NOT NULL,
     setting_value TEXT,
     category      VARCHAR(50)  NOT NULL DEFAULT 'general',
     description   VARCHAR(255),
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_restaurant_setting UNIQUE (restaurant_id, setting_key)
+    CONSTRAINT uk_company_setting UNIQUE (company_id, setting_key)
 );
-CREATE INDEX IF NOT EXISTS idx_settings_category ON settings (restaurant_id, category);
+CREATE INDEX IF NOT EXISTS idx_settings_category ON settings (company_id, category);
 
 -- ----------------------------------------------------------------------------
 -- Profile (business profile shown in the header / Settings page)
@@ -140,7 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_settings_category ON settings (restaurant_id, cat
 
 CREATE TABLE IF NOT EXISTS professional_profiles (
     id                            SERIAL PRIMARY KEY,
-    restaurant_id                 INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id                    INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     owner_user_id                 INTEGER      NOT NULL REFERENCES users(id) ON UPDATE CASCADE,
     business_name                 VARCHAR(255) NOT NULL,
     display_name                  VARCHAR(255) NOT NULL,
@@ -161,7 +160,7 @@ CREATE TABLE IF NOT EXISTS professional_profiles (
     is_public_booking_enabled     SMALLINT     NOT NULL DEFAULT 1,
     created_at                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_prof_profiles_restaurant UNIQUE (restaurant_id),
+    CONSTRAINT uk_prof_profiles_company UNIQUE (company_id),
     CONSTRAINT uk_prof_profiles_owner_user UNIQUE (owner_user_id),
     CONSTRAINT uk_prof_profiles_booking_slug UNIQUE (booking_slug)
 );
@@ -172,7 +171,7 @@ CREATE TABLE IF NOT EXISTS professional_profiles (
 
 CREATE TABLE IF NOT EXISTS professional_services (
     id                    SERIAL PRIMARY KEY,
-    restaurant_id         INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id            INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     name                  VARCHAR(255) NOT NULL,
     description           TEXT,
     duration_minutes      SMALLINT     NOT NULL,
@@ -189,12 +188,12 @@ CREATE TABLE IF NOT EXISTS professional_services (
     created_at            TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at            TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_prof_services_restaurant_active ON professional_services (restaurant_id, is_active, sort_order);
-CREATE INDEX IF NOT EXISTS idx_prof_services_restaurant_public ON professional_services (restaurant_id, is_public_bookable, is_active);
+CREATE INDEX IF NOT EXISTS idx_prof_services_company_active ON professional_services (company_id, is_active, sort_order);
+CREATE INDEX IF NOT EXISTS idx_prof_services_company_public ON professional_services (company_id, is_public_bookable, is_active);
 
 CREATE TABLE IF NOT EXISTS professional_availability_rules (
     id             SERIAL PRIMARY KEY,
-    restaurant_id  INTEGER  NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id     INTEGER  NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     weekday        SMALLINT NOT NULL,                  -- 0=Sunday .. 6=Saturday
     start_time     TIME     NOT NULL,
     end_time       TIME     NOT NULL,
@@ -204,11 +203,11 @@ CREATE TABLE IF NOT EXISTS professional_availability_rules (
     created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_prof_availability_restaurant_day ON professional_availability_rules (restaurant_id, weekday, is_active);
+CREATE INDEX IF NOT EXISTS idx_prof_availability_company_day ON professional_availability_rules (company_id, weekday, is_active);
 
 CREATE TABLE IF NOT EXISTS professional_time_off (
     id            SERIAL PRIMARY KEY,
-    restaurant_id INTEGER   NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id    INTEGER   NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     starts_at     TIMESTAMP NOT NULL,
     ends_at       TIMESTAMP NOT NULL,
     reason        VARCHAR(255),
@@ -217,11 +216,11 @@ CREATE TABLE IF NOT EXISTS professional_time_off (
     created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_prof_time_off_restaurant_range ON professional_time_off (restaurant_id, starts_at, ends_at);
+CREATE INDEX IF NOT EXISTS idx_prof_time_off_company_range ON professional_time_off (company_id, starts_at, ends_at);
 
 CREATE TABLE IF NOT EXISTS professional_clients (
     id                       SERIAL PRIMARY KEY,
-    restaurant_id            INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id               INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     first_name               VARCHAR(120) NOT NULL,
     last_name                VARCHAR(120) NOT NULL,
     email                    VARCHAR(255),
@@ -240,13 +239,13 @@ CREATE TABLE IF NOT EXISTS professional_clients (
     created_at               TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_prof_clients_restaurant_name ON professional_clients (restaurant_id, last_name, first_name);
-CREATE INDEX IF NOT EXISTS idx_prof_clients_restaurant_email ON professional_clients (restaurant_id, email);
-CREATE INDEX IF NOT EXISTS idx_prof_clients_restaurant_phone ON professional_clients (restaurant_id, phone);
+CREATE INDEX IF NOT EXISTS idx_prof_clients_company_name ON professional_clients (company_id, last_name, first_name);
+CREATE INDEX IF NOT EXISTS idx_prof_clients_company_email ON professional_clients (company_id, email);
+CREATE INDEX IF NOT EXISTS idx_prof_clients_company_phone ON professional_clients (company_id, phone);
 
 CREATE TABLE IF NOT EXISTS professional_appointments (
     id                     SERIAL PRIMARY KEY,
-    restaurant_id          INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id             INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     professional_user_id   INTEGER      NOT NULL REFERENCES users(id) ON UPDATE CASCADE,
     client_id              INTEGER      NOT NULL REFERENCES professional_clients(id) ON UPDATE CASCADE,
     service_id             INTEGER      REFERENCES professional_services(id) ON UPDATE CASCADE ON DELETE SET NULL,
@@ -279,8 +278,8 @@ CREATE TABLE IF NOT EXISTS professional_appointments (
     updated_at             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_prof_appointments_confirmation_code UNIQUE (confirmation_code)
 );
-CREATE INDEX IF NOT EXISTS idx_prof_appointments_restaurant_start ON professional_appointments (restaurant_id, start_at);
-CREATE INDEX IF NOT EXISTS idx_prof_appointments_restaurant_status_date ON professional_appointments (restaurant_id, status, appointment_date, start_at);
+CREATE INDEX IF NOT EXISTS idx_prof_appointments_company_start ON professional_appointments (company_id, start_at);
+CREATE INDEX IF NOT EXISTS idx_prof_appointments_company_status_date ON professional_appointments (company_id, status, appointment_date, start_at);
 CREATE INDEX IF NOT EXISTS idx_prof_appointments_provider_range ON professional_appointments (professional_user_id, start_at, end_at);
 CREATE INDEX IF NOT EXISTS idx_prof_appointments_client ON professional_appointments (client_id, start_at);
 CREATE INDEX IF NOT EXISTS idx_prof_appointments_service ON professional_appointments (service_id);
@@ -291,7 +290,7 @@ CREATE INDEX IF NOT EXISTS idx_prof_appointments_service ON professional_appoint
 
 CREATE TABLE IF NOT EXISTS todos (
     id            SERIAL PRIMARY KEY,
-    restaurant_id INTEGER      NOT NULL REFERENCES restaurants(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    company_id    INTEGER      NOT NULL REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE,
     user_id       INTEGER      NOT NULL REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
     title         VARCHAR(255) NOT NULL,
     description   TEXT,
@@ -303,7 +302,7 @@ CREATE TABLE IF NOT EXISTS todos (
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_todos_restaurant_user ON todos (restaurant_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_todos_company_user ON todos (company_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_todos_status ON todos (status);
 CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos (due_date);
 
@@ -314,7 +313,7 @@ CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos (due_date);
 CREATE TABLE IF NOT EXISTS api_tokens (
     id            SERIAL PRIMARY KEY,
     user_id       INTEGER     NOT NULL,
-    restaurant_id INTEGER     NOT NULL,
+    company_id    INTEGER     NOT NULL,
     token_hash    VARCHAR(64) NOT NULL,
     device_name   VARCHAR(100),
     expires_at    TIMESTAMP   NOT NULL,

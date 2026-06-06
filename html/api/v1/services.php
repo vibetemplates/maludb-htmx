@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 
 api_require_method('GET');
 $auth = api_authenticate();
-$rid  = $auth['restaurant_id'];
+$rid  = $auth['company_id'];
 
 $serviceId = api_query('id');
 
@@ -26,7 +26,7 @@ if ($serviceId !== null) {
 $includeInactive = filter_var(api_query('include_inactive', false), FILTER_VALIDATE_BOOLEAN);
 
 $pdo = db();
-$sql = "SELECT * FROM professional_services WHERE restaurant_id = ?";
+$sql = "SELECT * FROM professional_services WHERE company_id = ?";
 $params = [$rid];
 if (!$includeInactive) {
     $sql .= " AND is_active = 1";

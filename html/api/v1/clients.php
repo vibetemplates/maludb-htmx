@@ -8,7 +8,7 @@
 require_once __DIR__ . '/_bootstrap.php';
 
 $auth   = api_authenticate();
-$rid    = $auth['restaurant_id'];
+$rid    = $auth['company_id'];
 $method = api_method();
 
 if ($method === 'GET') {
@@ -31,7 +31,7 @@ function handleListClients(int $rid): void {
     $offset  = ($page - 1) * $perPage;
 
     $pdo = db();
-    $where  = ["restaurant_id = ?"];
+    $where  = ["company_id = ?"];
     $params = [$rid];
 
     if ($search !== '') {
@@ -66,7 +66,7 @@ function handleListClients(int $rid): void {
 
 function handleGetClient(int $rid, int $id): void {
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND restaurant_id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND company_id = ? LIMIT 1");
     $stmt->execute([$id, $rid]);
     $client = $stmt->fetch();
 
@@ -77,7 +77,7 @@ function handleGetClient(int $rid, int $id): void {
     // Upcoming appointments
     $stmt = $pdo->prepare(
         "SELECT * FROM professional_appointments
-         WHERE client_id = ? AND restaurant_id = ? AND status IN ('pending','confirmed') AND start_at >= NOW()
+         WHERE client_id = ? AND company_id = ? AND status IN ('pending','confirmed') AND start_at >= NOW()
          ORDER BY start_at ASC LIMIT 20"
     );
     $stmt->execute([$id, $rid]);
@@ -86,7 +86,7 @@ function handleGetClient(int $rid, int $id): void {
     // Past appointments
     $stmt = $pdo->prepare(
         "SELECT * FROM professional_appointments
-         WHERE client_id = ? AND restaurant_id = ? AND (status IN ('completed','cancelled','no_show') OR start_at < NOW())
+         WHERE client_id = ? AND company_id = ? AND (status IN ('completed','cancelled','no_show') OR start_at < NOW())
          ORDER BY start_at DESC LIMIT 20"
     );
     $stmt->execute([$id, $rid]);
@@ -105,7 +105,7 @@ function handleUpdatePreferences(int $rid, int $id): void {
     }
 
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND restaurant_id = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT * FROM professional_clients WHERE id = ? AND company_id = ? LIMIT 1");
     $stmt->execute([$id, $rid]);
     $client = $stmt->fetch();
 

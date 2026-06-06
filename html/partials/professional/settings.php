@@ -6,31 +6,31 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireAdmin();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $user = get_user();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-settings-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-settings-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
 $pdo = db();
 
-$restaurantStmt = $pdo->prepare("SELECT id, name, phone, email, timezone, slug FROM restaurants WHERE id = ?");
-$restaurantStmt->execute([$restaurantId]);
-$restaurant = $restaurantStmt->fetch(PDO::FETCH_ASSOC);
+$companyStmt = $pdo->prepare("SELECT id, name, phone, email, timezone, slug FROM companies WHERE id = ?");
+$companyStmt->execute([$companyId]);
+$company = $companyStmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$restaurant) {
+if (!$company) {
     echo '<div class="alert alert-danger" id="professional-settings-no-business">Professional business not found.</div>';
     exit;
 }
 
-$profileStmt = $pdo->prepare("SELECT * FROM professional_profiles WHERE restaurant_id = ?");
-$profileStmt->execute([$restaurantId]);
+$profileStmt = $pdo->prepare("SELECT * FROM professional_profiles WHERE company_id = ?");
+$profileStmt->execute([$companyId]);
 $profile = $profileStmt->fetch(PDO::FETCH_ASSOC);
 
-$policyStmt = $pdo->prepare("SELECT setting_value FROM settings WHERE restaurant_id = ? AND setting_key = 'cancellation_policy' LIMIT 1");
-$policyStmt->execute([$restaurantId]);
+$policyStmt = $pdo->prepare("SELECT setting_value FROM settings WHERE company_id = ? AND setting_key = 'cancellation_policy' LIMIT 1");
+$policyStmt->execute([$companyId]);
 $defaultCancellationPolicy = (string)($policyStmt->fetchColumn() ?: '');
 
 $timezones = [
@@ -52,26 +52,26 @@ $locationTypes = [
 ];
 
 $formData = [
-    'business_name' => $profile['business_name'] ?? $restaurant['name'],
-    'display_name' => $profile['display_name'] ?? $restaurant['name'],
-    'business_phone' => $profile['business_phone'] ?? ($restaurant['phone'] ?? ''),
-    'business_email' => $profile['business_email'] ?? ($restaurant['email'] ?? ($user['email'] ?? '')),
-    'timezone' => $profile['timezone'] ?? ($restaurant['timezone'] ?? 'America/New_York'),
-    'booking_slug' => $profile['booking_slug'] ?? ($restaurant['slug'] ?? ''),
+    'business_name' => $profile['business_name'] ?? $company['name'],
+    'display_name' => $profile['display_name'] ?? $company['name'],
+    'business_phone' => $profile['business_phone'] ?? ($company['phone'] ?? ''),
+    'business_email' => $profile['business_email'] ?? ($company['email'] ?? ($user['email'] ?? '')),
+    'timezone' => $profile['timezone'] ?? ($company['timezone'] ?? 'America/New_York'),
+    'booking_slug' => $profile['booking_slug'] ?? ($company['slug'] ?? ''),
     'default_location_type' => $profile['default_location_type'] ?? 'in_person',
     'default_location_label' => $profile['default_location_label'] ?? '',
     'booking_instructions' => $profile['booking_instructions'] ?? '',
     'cancellation_policy' => $profile['cancellation_policy'] ?? $defaultCancellationPolicy,
     'cancellation_notice_hours' => (int)($profile['cancellation_notice_hours'] ?? 24),
     'is_public_booking_enabled' => isset($profile['is_public_booking_enabled']) ? (int)$profile['is_public_booking_enabled'] : 1,
-    'notification_from_email' => getRestaurantSetting($restaurantId, 'notification_from_email', $profile['business_email'] ?? ($restaurant['email'] ?? '')),
-    'reminder_hours_before' => (int)getRestaurantSetting($restaurantId, 'reminder_hours_before', '24'),
-    'notification_confirmation_email' => getRestaurantSetting($restaurantId, 'notification_confirmation_email', '1'),
-    'notification_confirmation_sms' => getRestaurantSetting($restaurantId, 'notification_confirmation_sms', '0'),
-    'notification_reminder_email' => getRestaurantSetting($restaurantId, 'notification_reminder_email', '1'),
-    'notification_reminder_sms' => getRestaurantSetting($restaurantId, 'notification_reminder_sms', '0'),
-    'notification_cancellation_email' => getRestaurantSetting($restaurantId, 'notification_cancellation_email', '1'),
-    'notification_cancellation_sms' => getRestaurantSetting($restaurantId, 'notification_cancellation_sms', '0'),
+    'notification_from_email' => getCompanySetting($companyId, 'notification_from_email', $profile['business_email'] ?? ($company['email'] ?? '')),
+    'reminder_hours_before' => (int)getCompanySetting($companyId, 'reminder_hours_before', '24'),
+    'notification_confirmation_email' => getCompanySetting($companyId, 'notification_confirmation_email', '1'),
+    'notification_confirmation_sms' => getCompanySetting($companyId, 'notification_confirmation_sms', '0'),
+    'notification_reminder_email' => getCompanySetting($companyId, 'notification_reminder_email', '1'),
+    'notification_reminder_sms' => getCompanySetting($companyId, 'notification_reminder_sms', '0'),
+    'notification_cancellation_email' => getCompanySetting($companyId, 'notification_cancellation_email', '1'),
+    'notification_cancellation_sms' => getCompanySetting($companyId, 'notification_cancellation_sms', '0'),
 ];
 $bookingPageUrl = (
     !empty($profile)

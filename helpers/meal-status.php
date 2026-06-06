@@ -50,7 +50,7 @@ function getMealPercentages(int $restaurantId = 0): array
         $placeholders = implode(',', array_fill(0, count($keys), '?'));
         $stmt = db()->prepare(
             "SELECT setting_key, setting_value FROM settings
-             WHERE restaurant_id = ? AND setting_key IN ({$placeholders})"
+             WHERE company_id = ? AND setting_key IN ({$placeholders})"
         );
         $stmt->execute(array_merge([$restaurantId], $keys));
         $rows = $stmt->fetchAll();

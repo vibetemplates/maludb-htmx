@@ -40,7 +40,7 @@ function getRetellApiKey(?int $restaurantId = null): string
     // 1. Check for restaurant-specific override
     if ($restaurantId !== null && $restaurantId > 0) {
         $stmt = $pdo->prepare(
-            "SELECT setting_value FROM settings WHERE setting_key = 'retell_api_key' AND restaurant_id = ? AND setting_value != '' LIMIT 1"
+            "SELECT setting_value FROM settings WHERE setting_key = 'retell_api_key' AND company_id = ? AND setting_value != '' LIMIT 1"
         );
         $stmt->execute([$restaurantId]);
         $row = $stmt->fetch();
@@ -51,7 +51,7 @@ function getRetellApiKey(?int $restaurantId = null): string
 
     // 2. Check for a global key in settings
     $stmt = $pdo->prepare(
-        "SELECT setting_value FROM settings WHERE setting_key = 'retell_api_key' AND setting_value != '' ORDER BY restaurant_id ASC LIMIT 1"
+        "SELECT setting_value FROM settings WHERE setting_key = 'retell_api_key' AND setting_value != '' ORDER BY company_id ASC LIMIT 1"
     );
     $stmt->execute();
     $row = $stmt->fetch();

@@ -26,8 +26,8 @@ if ($serviceId <= 0 || $date === '') {
     exit;
 }
 
-$restaurantId = (int)$profile['restaurant_id'];
-$service = getProfessionalService($restaurantId, $serviceId, ['public_booking' => true]);
+$companyId = (int)$profile['company_id'];
+$service = getProfessionalService($companyId, $serviceId, ['public_booking' => true]);
 
 if (!$service) {
     echo '<div class="alert alert-warning" id="professional-public-slots-service-invalid">The selected service is not available for online booking.</div>';
@@ -42,7 +42,7 @@ if ($dateObject === null) {
     exit;
 }
 
-$slots = getProfessionalAvailableSlots($restaurantId, $serviceId, $dateObject->format('Y-m-d'), [
+$slots = getProfessionalAvailableSlots($companyId, $serviceId, $dateObject->format('Y-m-d'), [
     'public_booking' => true,
 ]);
 

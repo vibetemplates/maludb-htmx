@@ -17,11 +17,11 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-availability-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-availability-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -30,15 +30,15 @@ $availabilityId = (int)($_POST['availability_id'] ?? 0);
 $pdo = db();
 
 if ($action === 'delete' && $availabilityId > 0) {
-    $stmt = $pdo->prepare("SELECT id FROM professional_availability_rules WHERE id = ? AND restaurant_id = ?");
-    $stmt->execute([$availabilityId, $restaurantId]);
+    $stmt = $pdo->prepare("SELECT id FROM professional_availability_rules WHERE id = ? AND company_id = ?");
+    $stmt->execute([$availabilityId, $companyId]);
     if (!$stmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-availability-delete-not-found">Availability window not found.</div>';
         exit;
     }
 
-    $stmt = $pdo->prepare("DELETE FROM professional_availability_rules WHERE id = ? AND restaurant_id = ?");
-    $stmt->execute([$availabilityId, $restaurantId]);
+    $stmt = $pdo->prepare("DELETE FROM professional_availability_rules WHERE id = ? AND company_id = ?");
+    $stmt->execute([$availabilityId, $companyId]);
 
     header('HX-Trigger: refreshProfessionalAvailabilityList');
     echo '<div class="alert alert-success alert-dismissible fade show" id="professional-save-availability-delete-success">
@@ -87,12 +87,12 @@ if ($isActive === 1) {
     $overlapQuery = "
         SELECT id
         FROM professional_availability_rules
-        WHERE restaurant_id = ?
+        WHERE company_id = ?
           AND weekday = ?
           AND is_active = 1
           AND NOT (end_time <= ? OR start_time >= ?)
     ";
-    $overlapParams = [$restaurantId, $weekday, $startTime, $endTime];
+    $overlapParams = [$companyId, $weekday, $startTime, $endTime];
 
     if ($isEdit) {
         $overlapQuery .= " AND id != ?";
@@ -108,8 +108,8 @@ if ($isActive === 1) {
 }
 
 if ($isEdit) {
-    $checkStmt = $pdo->prepare("SELECT id FROM professional_availability_rules WHERE id = ? AND restaurant_id = ?");
-    $checkStmt->execute([$availabilityId, $restaurantId]);
+    $checkStmt = $pdo->prepare("SELECT id FROM professional_availability_rules WHERE id = ? AND company_id = ?");
+    $checkStmt->execute([$availabilityId, $companyId]);
     if (!$checkStmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-availability-not-found">Availability window not found.</div>';
         exit;
@@ -124,7 +124,7 @@ if ($isEdit) {
             location_label = ?,
             is_active = ?,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
 
     $stmt->execute([
@@ -135,12 +135,12 @@ if ($isEdit) {
         $locationLabel ?: null,
         $isActive,
         $availabilityId,
-        $restaurantId,
+        $companyId,
     ]);
 } else {
     $stmt = $pdo->prepare(
         "INSERT INTO professional_availability_rules (
-            restaurant_id,
+            company_id,
             weekday,
             start_time,
             end_time,
@@ -153,7 +153,7 @@ if ($isEdit) {
     );
 
     $stmt->execute([
-        $restaurantId,
+        $companyId,
         $weekday,
         $startTime,
         $endTime,

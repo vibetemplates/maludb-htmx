@@ -14,7 +14,7 @@ requireAuth();
 $user = get_user();
 $firstName = htmlspecialchars($user['first_name'] ?? 'there');
 $todayLabel = date('l, F j, Y');
-$businessId = currentRestaurantId();
+$businessId = currentCompanyId();
 $pdo = db();
 
 // Safe scalar count: returns 0 if the query fails (e.g. table missing)
@@ -31,15 +31,15 @@ $safeCount = function (string $sql, array $params) use ($pdo): int {
 
 // --- Stat cards (real data) ---
 $appointmentCount = $safeCount(
-    "SELECT COUNT(*) FROM professional_appointments WHERE restaurant_id = ?",
+    "SELECT COUNT(*) FROM professional_appointments WHERE company_id = ?",
     [$businessId]
 );
 $clientCount = $safeCount(
-    "SELECT COUNT(*) FROM professional_clients WHERE restaurant_id = ?",
+    "SELECT COUNT(*) FROM professional_clients WHERE company_id = ?",
     [$businessId]
 );
 $todoCount = $safeCount(
-    "SELECT COUNT(*) FROM todos WHERE restaurant_id = ?",
+    "SELECT COUNT(*) FROM todos WHERE company_id = ?",
     [$businessId]
 );
 
@@ -48,13 +48,13 @@ $totalRecords = $appointmentCount + $clientCount + $todoCount;
 
 $appointmentsToday = $safeCount(
     "SELECT COUNT(*) FROM professional_appointments
-      WHERE restaurant_id = ? AND appointment_date = CURRENT_DATE
+      WHERE company_id = ? AND appointment_date = CURRENT_DATE
         AND status NOT IN ('cancelled')",
     [$businessId]
 );
 
 $openTasks = $safeCount(
-    "SELECT COUNT(*) FROM todos WHERE restaurant_id = ? AND status != 'completed'",
+    "SELECT COUNT(*) FROM todos WHERE company_id = ? AND status != 'completed'",
     [$businessId]
 );
 
@@ -66,7 +66,7 @@ try {
                 c.first_name, c.last_name
            FROM professional_appointments a
            LEFT JOIN professional_clients c ON c.id = a.client_id
-          WHERE a.restaurant_id = ?
+          WHERE a.company_id = ?
           ORDER BY a.start_at DESC
           LIMIT 5"
     );

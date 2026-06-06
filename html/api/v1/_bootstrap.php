@@ -6,7 +6,7 @@
  */
 
 require_once __DIR__ . '/../../../helpers/db.php';
-require_once __DIR__ . '/../../../helpers/restaurant.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
@@ -71,12 +71,12 @@ function api_authenticate(): array {
 
     $pdo = db();
     $stmt = $pdo->prepare(
-        "SELECT t.user_id, t.restaurant_id, t.expires_at,
+        "SELECT t.user_id, t.company_id, t.expires_at,
                 u.id, u.email, u.first_name, u.last_name, u.role AS platform_role, u.is_active,
-                ur.role AS restaurant_role
+                ur.role AS company_role
          FROM api_tokens t
          JOIN users u ON u.id = t.user_id
-         LEFT JOIN user_restaurants ur ON ur.user_id = t.user_id AND ur.restaurant_id = t.restaurant_id
+         LEFT JOIN user_companies ur ON ur.user_id = t.user_id AND ur.company_id = t.company_id
          WHERE t.token_hash = ? AND t.expires_at > NOW()
          LIMIT 1"
     );
@@ -93,8 +93,8 @@ function api_authenticate(): array {
         'first_name'      => $row['first_name'],
         'last_name'       => $row['last_name'],
         'platform_role'   => $row['platform_role'],
-        'restaurant_id'   => (int)$row['restaurant_id'],
-        'restaurant_role' => $row['restaurant_role'] ?? 'user',
+        'company_id'   => (int)$row['company_id'],
+        'company_role' => $row['company_role'] ?? 'user',
     ];
 }
 

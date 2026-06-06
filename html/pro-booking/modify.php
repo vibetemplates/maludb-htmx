@@ -23,10 +23,10 @@ if (!$appointment) {
     exit;
 }
 
-$restaurantId = (int)$appointment['restaurant_id'];
-$profile = getProfessionalProfile($restaurantId);
-$service = getProfessionalService($restaurantId, (int)$appointment['service_id'], ['allow_inactive' => true]);
-$displayName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['restaurant_name']));
+$companyId = (int)$appointment['company_id'];
+$profile = getProfessionalProfile($companyId);
+$service = getProfessionalService($companyId, (int)$appointment['service_id'], ['allow_inactive' => true]);
+$displayName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['company_name']));
 $restriction = professionalGetSelfServiceRestriction($appointment);
 $message = '';
 
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'modif
         if ($newStartAt === '') {
             $message = '<div class="alert alert-danger" id="professional-modify-start-required">Choose a new appointment time first.</div>';
         } else {
-            $slotValidation = validateProfessionalSlot($restaurantId, (int)$appointment['service_id'], $newStartAt, [
+            $slotValidation = validateProfessionalSlot($companyId, (int)$appointment['service_id'], $newStartAt, [
                 'allow_inactive' => true,
                 'exclude_appointment_id' => (int)$appointment['id'],
             ]);
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'modif
                                 location_type = ?,
                                 location_label = ?,
                                 updated_at = NOW()
-                             WHERE id = ? AND restaurant_id = ?"
+                             WHERE id = ? AND company_id = ?"
                         );
                         $updateStmt->execute([
                             $startAtObject->format('Y-m-d'),
@@ -118,13 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'modif
                             $slot['location_type'] ?: null,
                             $slot['location_label'] ?: null,
                             (int)$appointment['id'],
-                            $restaurantId,
+                            $companyId,
                         ]);
 
                         $pdo->commit();
 
                         professionalLogAppointmentActivity(
-                            $restaurantId,
+                            $companyId,
                             null,
                             (int)$appointment['id'],
                             'self_service_reschedule',

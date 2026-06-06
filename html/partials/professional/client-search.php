@@ -4,11 +4,11 @@ require_once __DIR__ . '/../../../helpers/auth.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $query = trim($_GET['client_query'] ?? '');
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger mt-2" id="professional-client-search-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger mt-2" id="professional-client-search-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -21,7 +21,7 @@ $likeQuery = '%' . $query . '%';
 $stmt = db()->prepare(
     "SELECT id, first_name, last_name, email, phone, last_appointment_at
      FROM professional_clients
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND (
             first_name LIKE ?
             OR last_name LIKE ?
@@ -32,7 +32,7 @@ $stmt = db()->prepare(
      ORDER BY last_appointment_at DESC, last_name ASC, first_name ASC
      LIMIT 8"
 );
-$stmt->execute([$restaurantId, $likeQuery, $likeQuery, $likeQuery, $likeQuery, $likeQuery]);
+$stmt->execute([$companyId, $likeQuery, $likeQuery, $likeQuery, $likeQuery, $likeQuery]);
 $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="mt-2" id="professional-client-search-main">

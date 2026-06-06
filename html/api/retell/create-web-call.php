@@ -51,7 +51,7 @@ $pdo = db();
 
 // If no agent_id provided, try to load from settings
 if (empty($agentId)) {
-    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE restaurant_id = ? AND setting_key = 'retell_agent_id'");
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE company_id = ? AND setting_key = 'retell_agent_id'");
     $stmt->execute([$restaurantId]);
     $row = $stmt->fetch();
     $agentId = $row ? $row['setting_value'] : '';
@@ -79,7 +79,7 @@ if (empty($apiKey)) {
 }
 
 // --- Auto-populate dynamic variables with restaurant + guest info ---
-$stmt = $pdo->prepare("SELECT name, slug, phone FROM restaurants WHERE id = ?");
+$stmt = $pdo->prepare("SELECT name, slug, phone FROM companies WHERE id = ?");
 $stmt->execute([$restaurantId]);
 $restaurant = $stmt->fetch();
 
@@ -95,7 +95,7 @@ $promptKeys = ['voice_agent_greeting', 'voice_agent_specials', 'voice_agent_cust
 $placeholders = implode(',', array_fill(0, count($promptKeys), '?'));
 $stmt = $pdo->prepare(
     "SELECT setting_key, setting_value FROM settings
-     WHERE restaurant_id = ? AND setting_key IN ({$placeholders})"
+     WHERE company_id = ? AND setting_key IN ({$placeholders})"
 );
 $stmt->execute(array_merge([$restaurantId], $promptKeys));
 foreach ($stmt->fetchAll() as $ps) {
@@ -117,7 +117,7 @@ if ($guestId) {
     $stmt->execute([$guestId, $restaurantId]);
     $matchedGuest = $stmt->fetch();
 } elseif ($guestPhone) {
-    require_once __DIR__ . '/../../../helpers/restaurant.php';
+    require_once __DIR__ . '/../../../helpers/company.php';
     $phoneDigits = normalizePhone($guestPhone);
     $phone10 = strlen($phoneDigits) > 10 ? substr($phoneDigits, -10) : $phoneDigits;
 

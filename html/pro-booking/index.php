@@ -22,7 +22,7 @@ if (!$profile) {
     exit;
 }
 
-$restaurantId = (int)$profile['restaurant_id'];
+$companyId = (int)$profile['company_id'];
 $timezone = new DateTimeZone($profile['timezone']);
 $now = new DateTimeImmutable('now', $timezone);
 $minDate = $now->modify('+' . (int)$profile['minimum_booking_notice_hours'] . ' hours')->format('Y-m-d');
@@ -38,12 +38,12 @@ if ($maxDate < $minDate) {
 $servicesStmt = db()->prepare(
     "SELECT id, name, description, duration_minutes, price, currency_code, location_type, location_label
      FROM professional_services
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND is_active = 1
        AND is_public_bookable = 1
      ORDER BY sort_order ASC, name ASC"
 );
-$servicesStmt->execute([$restaurantId]);
+$servicesStmt->execute([$companyId]);
 $services = $servicesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $displayName = $profile['display_name'] ?: $profile['business_name'];

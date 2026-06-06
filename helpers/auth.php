@@ -3,22 +3,22 @@
  * Authentication Helper
  *
  * Provides authentication and authorization functions
- * for the multi-tenant restaurant reservation system
+ * for the multi-tenant application
  *
  * Platform roles (users.role column):
- *   super-admin — Platform vendor administrator (access to all restaurants and users)
- *   affiliate   — Affiliate partner (referral dashboard, no restaurant access)
- *   user        — Normal user (access determined by user_restaurants table)
+ *   super-admin — Platform vendor administrator (access to all companies and users)
+ *   affiliate   — Affiliate partner (referral dashboard, no company access)
+ *   user        — Normal user (access determined by user_companies table)
  *
- * Restaurant roles (user_restaurants.role column):
- *   admin       — Restaurant administrator/purchaser (all setup, invite users)
- *   manager     — Restaurant manager (all setup access)
- *   user        — Restaurant staff (view/make/change/seat reservations, clear tables)
+ * Company roles (user_companies.role column):
+ *   admin       — Company administrator/purchaser (all setup, invite users)
+ *   manager     — Company manager (all setup access)
+ *   user        — Company staff
  */
 
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/restaurant.php';
+require_once __DIR__ . '/company.php';
 
 /**
  * Check if user is authenticated
@@ -45,15 +45,15 @@ function get_user() {
 }
 
 /**
- * Login user: authenticate, load restaurant memberships, set session
+ * Login user: authenticate, load company memberships, set session
  */
 function login_user($user, $remember = false) {
     session_start_once();
     regenerate_session();
 
-    // Load user's restaurant memberships
-    $restaurants = getUserRestaurants($user['id']);
-    $firstRestaurant = $restaurants[0] ?? null;
+    // Load user's company memberships
+    $companies = getUserCompanies($user['id']);
+    $firstCompany = $companies[0] ?? null;
 
     $platformRole = $user['role'] ?? 'user';
 
@@ -81,20 +81,20 @@ function login_user($user, $remember = false) {
         $_SESSION['affiliate_id'] = $affData ? (int)$affData['id'] : null;
     }
 
-    // Set current restaurant context
-    // Super-admins get all restaurants; pick the first if they have one assigned
-    if ($platformRole === 'super-admin' && !$firstRestaurant) {
-        // Super-admin with no direct restaurant assignment — load first restaurant in system
-        $anyRestaurant = db()->query("SELECT id, name FROM restaurants WHERE is_active = 1 ORDER BY name LIMIT 1")->fetch();
-        if ($anyRestaurant) {
-            $_SESSION['current_restaurant_id'] = (int)$anyRestaurant['id'];
+    // Set current company context
+    // Super-admins get all companies; pick the first if they have one assigned
+    if ($platformRole === 'super-admin' && !$firstCompany) {
+        // Super-admin with no direct company assignment — load first company in system
+        $anyCompany = db()->query("SELECT id, name FROM companies WHERE is_active = 1 ORDER BY name LIMIT 1")->fetch();
+        if ($anyCompany) {
+            $_SESSION['current_company_id'] = (int)$anyCompany['id'];
             $_SESSION['current_role'] = 'admin';
-            $_SESSION['current_restaurant_name'] = $anyRestaurant['name'];
+            $_SESSION['current_company_name'] = $anyCompany['name'];
         }
-    } elseif ($firstRestaurant) {
-        $_SESSION['current_restaurant_id'] = (int)$firstRestaurant['id'];
-        $_SESSION['current_role'] = $firstRestaurant['role'];
-        $_SESSION['current_restaurant_name'] = $firstRestaurant['name'];
+    } elseif ($firstCompany) {
+        $_SESSION['current_company_id'] = (int)$firstCompany['id'];
+        $_SESSION['current_role'] = $firstCompany['role'];
+        $_SESSION['current_company_name'] = $firstCompany['name'];
     }
 
     // Update last_login_at
@@ -132,30 +132,30 @@ function logout_user() {
 }
 
 /**
- * Switch the current restaurant context for the logged-in user
+ * Switch the current company context for the logged-in user
  */
-function switchRestaurant($restaurantId) {
+function switchCompany($companyId) {
     session_start_once();
     $userId = currentUserId();
     if (!$userId) return false;
 
-    $restaurant = getRestaurant($restaurantId);
-    if (!$restaurant) return false;
+    $company = getCompany($companyId);
+    if (!$company) return false;
 
-    // Super-admins can switch to any restaurant with admin-level access
+    // Super-admins can switch to any company with admin-level access
     if (isSuperAdmin()) {
-        $_SESSION['current_restaurant_id'] = (int)$restaurantId;
+        $_SESSION['current_company_id'] = (int)$companyId;
         $_SESSION['current_role'] = 'admin';
-        $_SESSION['current_restaurant_name'] = $restaurant['name'];
+        $_SESSION['current_company_name'] = $company['name'];
         return true;
     }
 
-    $role = getUserRole($userId, $restaurantId);
+    $role = getUserRole($userId, $companyId);
     if (!$role) return false;
 
-    $_SESSION['current_restaurant_id'] = (int)$restaurantId;
+    $_SESSION['current_company_id'] = (int)$companyId;
     $_SESSION['current_role'] = $role;
-    $_SESSION['current_restaurant_name'] = $restaurant['name'];
+    $_SESSION['current_company_name'] = $company['name'];
     return true;
 }
 
@@ -176,10 +176,10 @@ function requireAuth(): void {
         }
         exit;
     }
-    // Set timezone for all date() calls to use this restaurant's timezone
-    $rid = $_SESSION['current_restaurant_id'] ?? null;
-    if ($rid) {
-        applyRestaurantTimezone($rid);
+    // Set timezone for all date() calls to use this company's timezone
+    $cid = $_SESSION['current_company_id'] ?? null;
+    if ($cid) {
+        applyCompanyTimezone($cid);
     }
 }
 
@@ -247,31 +247,34 @@ function isHost(): bool { return isStaff(); }
 function isPlatformAdmin(): bool { return isSuperAdmin(); }
 function requireOwner(): void { requireAdmin(); }
 function requirePlatformAdmin(): void { requireSuperAdmin(); }
+// Deprecated tenant-rename aliases — remove with the orphaned legacy modules
+function switchRestaurant($companyId) { return switchCompany($companyId); }
+function currentRestaurantId(): ?int { return currentCompanyId(); }
 
 function currentUserId(): int {
     session_start_once();
     return (int)($_SESSION['user']['id'] ?? 0);
 }
 
-function currentRestaurantId(): ?int {
+function currentCompanyId(): ?int {
     session_start_once();
-    return isset($_SESSION['current_restaurant_id']) ? (int)$_SESSION['current_restaurant_id'] : null;
+    return isset($_SESSION['current_company_id']) ? (int)$_SESSION['current_company_id'] : null;
 }
 
 /**
- * Get the affiliate_id from the current restaurant.
- * Returns 0 if the current restaurant is not an affiliate location.
+ * Get the affiliate_id from the current company.
+ * Returns 0 if the current company is not an affiliate location.
  */
 function currentAffiliateId(): int {
-    $restaurantId = currentRestaurantId();
-    if (!$restaurantId) return 0;
+    $companyId = currentCompanyId();
+    if (!$companyId) return 0;
 
-    $stmt = db()->prepare("SELECT id, affiliate_id, location_type FROM restaurants WHERE id = ?");
-    $stmt->execute([$restaurantId]);
+    $stmt = db()->prepare("SELECT id, affiliate_id, location_type FROM companies WHERE id = ?");
+    $stmt->execute([$companyId]);
     $row = $stmt->fetch();
     if (!$row) return 0;
 
-    // If this restaurant IS the affiliate, use its own id
+    // If this company IS the affiliate, use its own id
     if ($row['location_type'] === 'affiliate') {
         return (int)$row['id'];
     }

@@ -8,13 +8,13 @@ require_once '../../helpers/professional-availability.php';
 
 session_start();
 
-function generateProfessionalPublicConfirmationCode(PDO $pdo, int $restaurantId): string {
+function generateProfessionalPublicConfirmationCode(PDO $pdo, int $companyId): string {
     for ($attempt = 0; $attempt < 20; $attempt++) {
         $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM professional_appointments WHERE restaurant_id = ? AND confirmation_code = ?"
+            "SELECT COUNT(*) FROM professional_appointments WHERE company_id = ? AND confirmation_code = ?"
         );
-        $stmt->execute([$restaurantId, $code]);
+        $stmt->execute([$companyId, $code]);
 
         if ((int)$stmt->fetchColumn() === 0) {
             return $code;
@@ -86,7 +86,7 @@ if (!validate_email($email)) {
     exit;
 }
 
-$restaurantId = (int)$profile['restaurant_id'];
+$companyId = (int)$profile['company_id'];
 $professionalUserId = (int)($profile['owner_user_id'] ?? 0);
 
 if ($professionalUserId <= 0) {
@@ -94,7 +94,7 @@ if ($professionalUserId <= 0) {
     exit;
 }
 
-$slotValidation = validateProfessionalSlot($restaurantId, $serviceId, $startAtInput, [
+$slotValidation = validateProfessionalSlot($companyId, $serviceId, $startAtInput, [
     'public_booking' => true,
 ]);
 
@@ -123,16 +123,16 @@ try {
     $clientId = 0;
 
     $clientByEmailStmt = $pdo->prepare(
-        "SELECT * FROM professional_clients WHERE restaurant_id = ? AND email = ? LIMIT 1"
+        "SELECT * FROM professional_clients WHERE company_id = ? AND email = ? LIMIT 1"
     );
-    $clientByEmailStmt->execute([$restaurantId, $email]);
+    $clientByEmailStmt->execute([$companyId, $email]);
     $client = $clientByEmailStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$client) {
         $clientByPhoneStmt = $pdo->prepare(
-            "SELECT * FROM professional_clients WHERE restaurant_id = ? AND phone = ? LIMIT 1"
+            "SELECT * FROM professional_clients WHERE company_id = ? AND phone = ? LIMIT 1"
         );
-        $clientByPhoneStmt->execute([$restaurantId, $phone]);
+        $clientByPhoneStmt->execute([$companyId, $phone]);
         $client = $clientByPhoneStmt->fetch(PDO::FETCH_ASSOC);
     }
 
@@ -145,7 +145,7 @@ try {
                 email = ?,
                 phone = ?,
                 updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
         $clientUpdateStmt->execute([
             $firstName,
@@ -153,12 +153,12 @@ try {
             $email,
             $phone,
             $clientId,
-            $restaurantId,
+            $companyId,
         ]);
     } else {
         $clientInsertStmt = $pdo->prepare(
             "INSERT INTO professional_clients (
-                restaurant_id,
+                company_id,
                 first_name,
                 last_name,
                 email,
@@ -168,7 +168,7 @@ try {
              ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())"
         );
         $clientInsertStmt->execute([
-            $restaurantId,
+            $companyId,
             $firstName,
             $lastName,
             $email,
@@ -185,15 +185,15 @@ try {
                 ELSE last_appointment_at
             END,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
-    $clientLastAppointmentStmt->execute([$clientDateValue, $clientDateValue, $clientId, $restaurantId]);
+    $clientLastAppointmentStmt->execute([$clientDateValue, $clientDateValue, $clientId, $companyId]);
 
-    $confirmationCode = generateProfessionalPublicConfirmationCode($pdo, $restaurantId);
+    $confirmationCode = generateProfessionalPublicConfirmationCode($pdo, $companyId);
 
     $appointmentInsertStmt = $pdo->prepare(
         "INSERT INTO professional_appointments (
-            restaurant_id,
+            company_id,
             professional_user_id,
             client_id,
             service_id,
@@ -218,7 +218,7 @@ try {
         ) VALUES (?, ?, ?, ?, 'confirmed', 'public_booking', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NOW(), NOW())"
     );
     $appointmentInsertStmt->execute([
-        $restaurantId,
+        $companyId,
         $professionalUserId,
         $clientId,
         (int)$service['id'],
@@ -242,7 +242,7 @@ try {
     $pdo->commit();
 
     professionalLogAppointmentActivity(
-        $restaurantId,
+        $companyId,
         null,
         $appointmentId,
         'public_booking_create',

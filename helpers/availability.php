@@ -7,24 +7,15 @@
  */
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/company.php';
 
 /**
  * Get a restaurant setting value
+ * DEPRECATED alias — the settings table is keyed by company_id now; use
+ * getCompanySetting(). Kept for the orphaned legacy modules only.
  */
-function getRestaurantSetting($restaurantId, $key, $default = null) {
-    static $cache = [];
-    $cacheKey = $restaurantId . ':' . $key;
-
-    if (isset($cache[$cacheKey])) {
-        return $cache[$cacheKey];
-    }
-
-    $stmt = db()->prepare("SELECT setting_value FROM settings WHERE restaurant_id = ? AND setting_key = ?");
-    $stmt->execute([$restaurantId, $key]);
-    $row = $stmt->fetch();
-    $value = $row ? $row['setting_value'] : $default;
-    $cache[$cacheKey] = $value;
-    return $value;
+function getRestaurantSetting($companyId, $key, $default = null) {
+    return getCompanySetting($companyId, $key, $default);
 }
 
 /**

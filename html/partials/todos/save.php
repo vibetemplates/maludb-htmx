@@ -14,10 +14,10 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit('<div class="alert alert-danger">Invalid CSRF token. Please refresh and try again.</div>');
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = $_SESSION['user_id'] ?? 0;
 
-if (!$restaurantId) {
+if (!$companyId) {
     echo '<div class="alert alert-danger">No account selected.</div>';
     exit;
 }
@@ -46,8 +46,8 @@ $pdo = db();
 
 if ($id > 0) {
     // Update — verify ownership
-    $check = $pdo->prepare("SELECT id FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
-    $check->execute([$id, $restaurantId, $userId]);
+    $check = $pdo->prepare("SELECT id FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
+    $check->execute([$id, $companyId, $userId]);
     if (!$check->fetch()) {
         echo '<div class="alert alert-danger">Todo not found.</div>';
         exit;
@@ -60,10 +60,10 @@ if ($id > 0) {
 } else {
     // Create
     $stmt = $pdo->prepare(
-        "INSERT INTO todos (restaurant_id, user_id, title, description, due_date, priority)
+        "INSERT INTO todos (company_id, user_id, title, description, due_date, priority)
          VALUES (?, ?, ?, ?, ?, ?)"
     );
-    $stmt->execute([$restaurantId, $userId, $title, $description ?: null, $dueDate, $priority]);
+    $stmt->execute([$companyId, $userId, $title, $description ?: null, $dueDate, $priority]);
 }
 
 // Return the updated list

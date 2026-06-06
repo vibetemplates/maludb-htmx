@@ -9,7 +9,7 @@
  */
 
 require_once __DIR__ . '/../../../helpers/db.php';
-require_once __DIR__ . '/../../../helpers/restaurant.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 require_once __DIR__ . '/../../../helpers/professional-voice-api.php';
 
 /**
@@ -28,7 +28,7 @@ function smsResolveContext(string $toNumber, string $fromNumber): array
     $rpnStmt = $pdo->prepare(
         "SELECT rpn.restaurant_id, rpn.phone_number
          FROM restaurant_phone_numbers rpn
-         JOIN restaurants r ON rpn.restaurant_id = r.id AND r.is_active = 1
+         JOIN companies r ON rpn.restaurant_id = r.id AND r.is_active = 1
          WHERE rpn.is_active = 1
          ORDER BY rpn.id"
     );
@@ -69,7 +69,7 @@ function smsResolveContext(string $toNumber, string $fromNumber): array
                 service_address_line1, service_city, service_state, service_postal_code,
                 preferred_contact_method, notes
          FROM professional_clients
-         WHERE restaurant_id = ? AND phone IS NOT NULL AND phone != ''"
+         WHERE company_id = ? AND phone IS NOT NULL AND phone != ''"
     );
     $clientStmt->execute([$restaurantId]);
 

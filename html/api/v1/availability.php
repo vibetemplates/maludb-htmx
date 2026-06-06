@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 
 api_require_method('GET');
 $auth = api_authenticate();
-$rid  = $auth['restaurant_id'];
+$rid  = $auth['company_id'];
 
 $serviceId = api_query('service_id');
 $date      = api_query('date');

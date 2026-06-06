@@ -8,7 +8,7 @@
  */
 
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/restaurant.php';
+require_once __DIR__ . '/company.php';
 require_once __DIR__ . '/availability.php';
 require_once __DIR__ . '/notifications.php';
 

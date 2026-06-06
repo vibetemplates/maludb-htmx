@@ -18,12 +18,12 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = currentUserId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-settings-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-settings-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -93,17 +93,17 @@ $pdo = db();
 
 $slugStmt = $pdo->prepare(
     "SELECT id FROM professional_profiles
-     WHERE booking_slug = ? AND restaurant_id != ?
+     WHERE booking_slug = ? AND company_id != ?
      LIMIT 1"
 );
-$slugStmt->execute([$bookingSlug, $restaurantId]);
+$slugStmt->execute([$bookingSlug, $companyId]);
 if ($slugStmt->fetch()) {
     echo '<div class="alert alert-danger" id="professional-save-settings-booking-slug-unique">This booking slug is already in use. Please choose a different one.</div>';
     exit;
 }
 
-$profileStmt = $pdo->prepare("SELECT id, owner_user_id FROM professional_profiles WHERE restaurant_id = ? LIMIT 1");
-$profileStmt->execute([$restaurantId]);
+$profileStmt = $pdo->prepare("SELECT id, owner_user_id FROM professional_profiles WHERE company_id = ? LIMIT 1");
+$profileStmt->execute([$companyId]);
 $existingProfile = $profileStmt->fetch(PDO::FETCH_ASSOC);
 
 if ($existingProfile) {
@@ -122,7 +122,7 @@ if ($existingProfile) {
             booking_instructions = ?,
             cancellation_policy = ?,
             updated_at = NOW()
-         WHERE restaurant_id = ?"
+         WHERE company_id = ?"
     );
 
     $stmt->execute([
@@ -138,12 +138,12 @@ if ($existingProfile) {
         $defaultLocationLabel ?: null,
         $bookingInstructions ?: null,
         $cancellationPolicy ?: null,
-        $restaurantId,
+        $companyId,
     ]);
 } else {
     $stmt = $pdo->prepare(
         "INSERT INTO professional_profiles (
-            restaurant_id,
+            company_id,
             owner_user_id,
             business_name,
             display_name,
@@ -163,7 +163,7 @@ if ($existingProfile) {
     );
 
     $stmt->execute([
-        $restaurantId,
+        $companyId,
         $userId,
         $businessName,
         $displayName,
@@ -180,8 +180,8 @@ if ($existingProfile) {
     ]);
 }
 
-$timezoneUpdateStmt = $pdo->prepare("UPDATE restaurants SET timezone = ? WHERE id = ?");
-$timezoneUpdateStmt->execute([$timezone, $restaurantId]);
+$timezoneUpdateStmt = $pdo->prepare("UPDATE companies SET timezone = ? WHERE id = ?");
+$timezoneUpdateStmt->execute([$timezone, $companyId]);
 
 $settingsToSave = [
     'notification_from_email' => $notificationFromEmail,
@@ -195,13 +195,13 @@ $settingsToSave = [
 ];
 
 $settingsStmt = $pdo->prepare(
-    "INSERT INTO settings (restaurant_id, setting_key, setting_value)
+    "INSERT INTO settings (company_id, setting_key, setting_value)
      VALUES (?, ?, ?)
      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
 );
 
 foreach ($settingsToSave as $settingKey => $settingValue) {
-    $settingsStmt->execute([$restaurantId, $settingKey, $settingValue]);
+    $settingsStmt->execute([$companyId, $settingKey, $settingValue]);
 }
 
 echo '<div class="alert alert-success alert-dismissible fade show" id="professional-save-settings-success">

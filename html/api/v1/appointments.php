@@ -19,10 +19,10 @@ require_once __DIR__ . '/../../../helpers/professional-voice-api.php';
 require_once __DIR__ . '/../../../helpers/professional-booking.php';
 
 $auth   = api_authenticate();
-$rid    = $auth['restaurant_id'];
+$rid    = $auth['company_id'];
 $method = api_method();
 
-// Resolve the booking slug for this restaurant
+// Resolve the booking slug for this company
 $profile = getProfessionalProfile($rid);
 if (!$profile) {
     api_error('Professional profile not configured.', 'NOT_FOUND', 404);
@@ -74,7 +74,7 @@ function handleList(int $rid, array $profile): void {
     $offset    = ($page - 1) * $perPage;
 
     $pdo = db();
-    $where  = ["a.restaurant_id = ?"];
+    $where  = ["a.company_id = ?"];
     $params = [$rid];
 
     // Date range
@@ -136,7 +136,7 @@ function handleGetById(int $rid, int $id): void {
                 c.phone AS client_phone, c.email AS client_email
          FROM professional_appointments a
          LEFT JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.id = ? AND a.restaurant_id = ?
+         WHERE a.id = ? AND a.company_id = ?
          LIMIT 1"
     );
     $stmt->execute([$id, $rid]);
@@ -304,7 +304,7 @@ function handleComplete(int $rid): void {
     $pdo = db();
     $stmt = $pdo->prepare(
         "SELECT * FROM professional_appointments
-         WHERE confirmation_code = ? AND restaurant_id = ? LIMIT 1"
+         WHERE confirmation_code = ? AND company_id = ? LIMIT 1"
     );
     $stmt->execute([$code, $rid]);
     $apt = $stmt->fetch();
@@ -341,7 +341,7 @@ function handleNoShow(int $rid): void {
     $pdo = db();
     $stmt = $pdo->prepare(
         "SELECT * FROM professional_appointments
-         WHERE confirmation_code = ? AND restaurant_id = ? LIMIT 1"
+         WHERE confirmation_code = ? AND company_id = ? LIMIT 1"
     );
     $stmt->execute([$code, $rid]);
     $apt = $stmt->fetch();

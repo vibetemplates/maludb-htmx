@@ -52,14 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $resetUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/reset-password.php?token=' . urlencode($token);
 
-        $restStmt = db()->prepare(
-            "SELECT ur.restaurant_id FROM user_restaurants ur
-               JOIN users u ON u.id = ur.user_id
-              WHERE u.email = ? AND ur.is_active = 1
-              ORDER BY ur.id LIMIT 1"
+        $companyStmt = db()->prepare(
+            "SELECT uc.company_id FROM user_companies uc
+               JOIN users u ON u.id = uc.user_id
+              WHERE u.email = ? AND uc.is_active = 1
+              ORDER BY uc.id LIMIT 1"
         );
-        $restStmt->execute([$email]);
-        $restaurantId = (int)($restStmt->fetchColumn() ?: 0);
+        $companyStmt->execute([$email]);
+        $companyId = (int)($companyStmt->fetchColumn() ?: 0);
 
         $htmlBody = '<p>We received a request to reset your password.</p>'
                   . '<p><a href="' . htmlspecialchars($resetUrl) . '">Click here to choose a new password</a>.</p>'
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   . "Open this link to choose a new password (expires in 1 hour):\n{$resetUrl}\n\n"
                   . "If you did not request a reset, you can ignore this email.";
 
-        if (!sendEmail($restaurantId, $email, 'Reset your password', $htmlBody, $textBody)) {
+        if (!sendEmail($companyId, $email, 'Reset your password', $htmlBody, $textBody)) {
             error_log("Password reset email failed to send for {$email}");
         }
     }

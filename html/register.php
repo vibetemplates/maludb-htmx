@@ -280,7 +280,7 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
                                     <div class="mb-3" id="register-google-company-group">
                                         <label class="form-label" for="register-google-company">Company Name</label>
                                         <input type="text" class="form-control" id="register-google-company"
-                                               name="restaurant_name" placeholder="Your Company Name" required autofocus>
+                                               name="company_name" placeholder="Your Company Name" required autofocus>
                                     </div>
                                     <div class="mb-4" id="register-google-location-type-group">
                                         <label class="form-label" for="register-google-location-type">Business Type</label>
@@ -330,10 +330,10 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
                                     </div>
                                 </div>
 
-                                <div class="mb-3" id="register-restaurant-group">
-                                    <label class="form-label" for="register-restaurant">Company Name</label>
-                                    <input type="text" class="form-control" id="register-restaurant"
-                                           name="restaurant_name" placeholder="Your Company Name" required>
+                                <div class="mb-3" id="register-company-group">
+                                    <label class="form-label" for="register-company">Company Name</label>
+                                    <input type="text" class="form-control" id="register-company"
+                                           name="company_name" placeholder="Your Company Name" required>
                                 </div>
 
                                 <div class="mb-3" id="register-location-type-group">

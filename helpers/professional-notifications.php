@@ -19,13 +19,13 @@ function professionalGetNotificationContext(int $appointmentId): ?array
         return null;
     }
 
-    $businessName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['restaurant_name']));
+    $businessName = trim((string)($appointment['display_name'] ?: $appointment['business_name'] ?: $appointment['company_name']));
     $locationLabel = trim((string)($appointment['location_label'] ?: $appointment['default_location_label']));
     if ($locationLabel === '') {
         $locationLabel = ucwords(str_replace('_', ' ', (string)($appointment['location_type'] ?: $appointment['default_location_type'] ?: 'in_person')));
     }
 
-    $timezoneName = $appointment['profile_timezone'] ?: ($appointment['restaurant_timezone'] ?: 'America/New_York');
+    $timezoneName = $appointment['profile_timezone'] ?: ($appointment['company_timezone'] ?: 'America/New_York');
     try {
         $timezone = new DateTimeZone($timezoneName);
     } catch (Throwable $exception) {
@@ -41,7 +41,7 @@ function professionalGetNotificationContext(int $appointmentId): ?array
 
     return [
         '_row' => $appointment,
-        'restaurant_id' => (int)$appointment['restaurant_id'],
+        'company_id' => (int)$appointment['company_id'],
         'appointment_id' => (int)$appointment['id'],
         'client_id' => (int)$appointment['client_id'],
         'client_first_name' => (string)$appointment['first_name'],
@@ -50,8 +50,8 @@ function professionalGetNotificationContext(int $appointmentId): ?array
         'client_email' => (string)($appointment['client_email'] ?? ''),
         'client_phone' => (string)($appointment['client_phone'] ?? ''),
         'business_name' => $businessName,
-        'business_phone' => (string)($appointment['business_phone'] ?: $appointment['restaurant_phone'] ?: ''),
-        'business_email' => (string)($appointment['business_email'] ?: $appointment['restaurant_email'] ?: ''),
+        'business_phone' => (string)($appointment['business_phone'] ?: $appointment['company_phone'] ?: ''),
+        'business_email' => (string)($appointment['business_email'] ?: $appointment['company_email'] ?: ''),
         'service_name' => (string)$appointment['service_name'],
         'date' => $startAt->format('l, F j, Y'),
         'time' => $startAt->format('g:ia'),
@@ -67,9 +67,9 @@ function professionalGetNotificationContext(int $appointmentId): ?array
 /**
  * Check one professional notification toggle.
  */
-function professionalNotificationEnabled(int $restaurantId, string $settingKey, string $default = '0'): bool
+function professionalNotificationEnabled(int $companyId, string $settingKey, string $default = '0'): bool
 {
-    return getRestaurantSetting($restaurantId, $settingKey, $default) === '1';
+    return getCompanySetting($companyId, $settingKey, $default) === '1';
 }
 
 /**
@@ -143,7 +143,7 @@ function professionalSendAppointmentEmail(int $appointmentId, string $type): boo
     $textBody = trim(strip_tags(str_replace(['</li>', '</p>', '</h2>'], ["\n", "\n", "\n"], $htmlBody)));
 
     return sendEmail(
-        $context['restaurant_id'],
+        $context['company_id'],
         $context['client_email'],
         $subject,
         $htmlBody,
@@ -190,7 +190,7 @@ function professionalSendAppointmentSms(int $appointmentId, string $type): bool
             return false;
     }
 
-    $result = twilioSend($context['restaurant_id'], $context['client_phone'], $message);
+    $result = twilioSend($context['company_id'], $context['client_phone'], $message);
 
     return (bool)($result['success'] ?? false);
 }
@@ -205,13 +205,13 @@ function professionalSendAppointmentConfirmationNotifications(int $appointmentId
         return ['email' => false, 'sms' => false];
     }
 
-    $restaurantId = (int)$context['restaurant_id'];
+    $companyId = (int)$context['company_id'];
 
     return [
-        'email' => professionalNotificationEnabled($restaurantId, 'notification_confirmation_email', '1')
+        'email' => professionalNotificationEnabled($companyId, 'notification_confirmation_email', '1')
             ? professionalSendAppointmentEmail($appointmentId, 'confirmation')
             : false,
-        'sms' => professionalNotificationEnabled($restaurantId, 'notification_confirmation_sms', '0')
+        'sms' => professionalNotificationEnabled($companyId, 'notification_confirmation_sms', '0')
             ? professionalSendAppointmentSms($appointmentId, 'confirmation')
             : false,
     ];
@@ -227,13 +227,13 @@ function professionalSendAppointmentReminderNotifications(int $appointmentId): a
         return ['email' => false, 'sms' => false];
     }
 
-    $restaurantId = (int)$context['restaurant_id'];
+    $companyId = (int)$context['company_id'];
 
     return [
-        'email' => professionalNotificationEnabled($restaurantId, 'notification_reminder_email', '1')
+        'email' => professionalNotificationEnabled($companyId, 'notification_reminder_email', '1')
             ? professionalSendAppointmentEmail($appointmentId, 'reminder')
             : false,
-        'sms' => professionalNotificationEnabled($restaurantId, 'notification_reminder_sms', '0')
+        'sms' => professionalNotificationEnabled($companyId, 'notification_reminder_sms', '0')
             ? professionalSendAppointmentSms($appointmentId, 'reminder')
             : false,
     ];
@@ -249,13 +249,13 @@ function professionalSendAppointmentCancellationNotifications(int $appointmentId
         return ['email' => false, 'sms' => false];
     }
 
-    $restaurantId = (int)$context['restaurant_id'];
+    $companyId = (int)$context['company_id'];
 
     return [
-        'email' => professionalNotificationEnabled($restaurantId, 'notification_cancellation_email', '1')
+        'email' => professionalNotificationEnabled($companyId, 'notification_cancellation_email', '1')
             ? professionalSendAppointmentEmail($appointmentId, 'cancellation')
             : false,
-        'sms' => professionalNotificationEnabled($restaurantId, 'notification_cancellation_sms', '0')
+        'sms' => professionalNotificationEnabled($companyId, 'notification_cancellation_sms', '0')
             ? professionalSendAppointmentSms($appointmentId, 'cancellation')
             : false,
     ];

@@ -58,7 +58,7 @@ $restaurant = null;
 if ($queryAgentId !== '') {
     $agentStmt = db()->prepare(
         "SELECT rp.restaurant_id FROM restaurant_prompts rp
-         JOIN restaurants r ON r.id = rp.restaurant_id AND r.is_active = 1
+         JOIN companies r ON r.id = rp.restaurant_id AND r.is_active = 1
          WHERE rp.agent_id = ?
          LIMIT 1"
     );
@@ -147,7 +147,7 @@ if ($event === 'call_inbound' || $event === 'call_started') {
 
         $stmt = $pdo->prepare(
             "SELECT * FROM professional_clients
-             WHERE restaurant_id = ? AND phone IS NOT NULL AND phone != ''
+             WHERE company_id = ? AND phone IS NOT NULL AND phone != ''
              ORDER BY last_appointment_at DESC"
         );
         $stmt->execute([$restaurantId]);
@@ -204,7 +204,7 @@ if ($event === 'call_inbound' || $event === 'call_started') {
                         client_notes, service_contact_name, service_phone, service_contact_method,
                         service_address_1, service_city, service_state, service_postal_code
                  FROM professional_appointments
-                 WHERE restaurant_id = ? AND client_id = ? AND appointment_date >= CURDATE()
+                 WHERE company_id = ? AND client_id = ? AND appointment_date >= CURDATE()
                    AND status IN ('pending','confirmed')
                  ORDER BY appointment_date ASC, start_at ASC
                  LIMIT 1"
@@ -240,7 +240,7 @@ if ($event === 'call_inbound' || $event === 'call_started') {
     $placeholders = implode(',', array_fill(0, count($promptKeys), '?'));
     $stmt = $pdo->prepare(
         "SELECT setting_key, setting_value FROM settings
-         WHERE restaurant_id = ? AND setting_key IN ({$placeholders})"
+         WHERE company_id = ? AND setting_key IN ({$placeholders})"
     );
     $stmt->execute(array_merge([$restaurantId], $promptKeys));
     $promptSettings = $stmt->fetchAll();
@@ -509,8 +509,8 @@ if ($event === 'call_ended') {
                             // Determine recipient phone: business phone from restaurants or professional_profiles
                             $bpStmt = $pdo->prepare(
                                 "SELECT pp.business_phone, r.phone
-                                 FROM restaurants r
-                                 LEFT JOIN professional_profiles pp ON pp.restaurant_id = r.id
+                                 FROM companies r
+                                 LEFT JOIN professional_profiles pp ON pp.company_id = r.id
                                  WHERE r.id = ?"
                             );
                             $bpStmt->execute([$restaurantId]);

@@ -17,11 +17,11 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-time-off-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-time-off-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -30,15 +30,15 @@ $timeOffId = (int)($_POST['time_off_id'] ?? 0);
 $pdo = db();
 
 if ($action === 'delete' && $timeOffId > 0) {
-    $stmt = $pdo->prepare("SELECT id FROM professional_time_off WHERE id = ? AND restaurant_id = ?");
-    $stmt->execute([$timeOffId, $restaurantId]);
+    $stmt = $pdo->prepare("SELECT id FROM professional_time_off WHERE id = ? AND company_id = ?");
+    $stmt->execute([$timeOffId, $companyId]);
     if (!$stmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-time-off-delete-not-found">Time-off entry not found.</div>';
         exit;
     }
 
-    $stmt = $pdo->prepare("DELETE FROM professional_time_off WHERE id = ? AND restaurant_id = ?");
-    $stmt->execute([$timeOffId, $restaurantId]);
+    $stmt = $pdo->prepare("DELETE FROM professional_time_off WHERE id = ? AND company_id = ?");
+    $stmt->execute([$timeOffId, $companyId]);
 
     header('HX-Trigger: refreshProfessionalTimeOffList');
     echo '<div class="alert alert-success alert-dismissible fade show" id="professional-save-time-off-delete-success">
@@ -91,8 +91,8 @@ if (strtotime($startsAt) >= strtotime($endsAt)) {
 }
 
 if ($isEdit) {
-    $checkStmt = $pdo->prepare("SELECT id FROM professional_time_off WHERE id = ? AND restaurant_id = ?");
-    $checkStmt->execute([$timeOffId, $restaurantId]);
+    $checkStmt = $pdo->prepare("SELECT id FROM professional_time_off WHERE id = ? AND company_id = ?");
+    $checkStmt->execute([$timeOffId, $companyId]);
     if (!$checkStmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-time-off-not-found">Time-off entry not found.</div>';
         exit;
@@ -106,7 +106,7 @@ if ($isEdit) {
             notes = ?,
             is_all_day = ?,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
     $stmt->execute([
         $startsAt,
@@ -115,12 +115,12 @@ if ($isEdit) {
         $notes ?: null,
         $isAllDay,
         $timeOffId,
-        $restaurantId,
+        $companyId,
     ]);
 } else {
     $stmt = $pdo->prepare(
         "INSERT INTO professional_time_off (
-            restaurant_id,
+            company_id,
             starts_at,
             ends_at,
             reason,
@@ -131,7 +131,7 @@ if ($isEdit) {
          ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())"
     );
     $stmt->execute([
-        $restaurantId,
+        $companyId,
         $startsAt,
         $endsAt,
         $reason ?: null,

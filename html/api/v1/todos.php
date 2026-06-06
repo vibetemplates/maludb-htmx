@@ -12,14 +12,14 @@ require_once __DIR__ . '/_bootstrap.php';
 
 $auth   = api_authenticate();
 $uid    = $auth['user_id'];
-$rid    = $auth['restaurant_id'];
+$rid    = $auth['company_id'];
 $method = api_method();
 
 api_require_method('GET', 'POST', 'PUT', 'DELETE');
 
 // ── GET: List ──────────────────────────────────────────────
 if ($method === 'GET') {
-    $where  = ['restaurant_id = ?', 'user_id = ?'];
+    $where  = ['company_id = ?', 'user_id = ?'];
     $params = [$rid, $uid];
 
     $status = api_query('status');
@@ -78,7 +78,7 @@ if ($method === 'POST') {
     $priority    = in_array($body['priority'] ?? '', ['low', 'medium', 'high']) ? $body['priority'] : 'medium';
 
     $stmt = db()->prepare(
-        "INSERT INTO todos (restaurant_id, user_id, title, description, due_date, priority) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO todos (company_id, user_id, title, description, due_date, priority) VALUES (?, ?, ?, ?, ?, ?)"
     );
     $stmt->execute([$rid, $uid, $title, $description, $dueDate, $priority]);
 
@@ -96,7 +96,7 @@ if ($method === 'PUT') {
         api_error('Missing id parameter.', 'VALIDATION_ERROR', 422);
     }
 
-    $check = db()->prepare("SELECT * FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
+    $check = db()->prepare("SELECT * FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
     $check->execute([$id, $rid, $uid]);
     $existing = $check->fetch(PDO::FETCH_ASSOC);
 
@@ -142,7 +142,7 @@ if ($method === 'DELETE') {
         api_error('Missing id parameter.', 'VALIDATION_ERROR', 422);
     }
 
-    $stmt = db()->prepare("DELETE FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
+    $stmt = db()->prepare("DELETE FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
     $stmt->execute([$id, $rid, $uid]);
 
     if ($stmt->rowCount() === 0) {

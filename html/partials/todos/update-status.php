@@ -14,7 +14,7 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit('<div class="alert alert-danger">Invalid CSRF token.</div>');
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = $_SESSION['user_id'] ?? 0;
 $id = (int)($_POST['id'] ?? 0);
 $status = trim($_POST['status'] ?? '');
@@ -27,8 +27,8 @@ if (!in_array($status, ['pending', 'in_progress', 'completed'])) {
 $pdo = db();
 
 // Verify ownership
-$check = $pdo->prepare("SELECT id FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
-$check->execute([$id, $restaurantId, $userId]);
+$check = $pdo->prepare("SELECT id FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
+$check->execute([$id, $companyId, $userId]);
 if (!$check->fetch()) {
     echo '<div class="alert alert-danger">Todo not found.</div>';
     exit;

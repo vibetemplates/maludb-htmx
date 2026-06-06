@@ -5,26 +5,26 @@ require_once '../../../helpers/csrf.php';
 requireAuth();
 requireAdmin();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 $user = null;
 $membership = null;
 $isEdit = false;
 
 if ($userId > 0) {
-    // Verify user belongs to this restaurant
+    // Verify user belongs to this company
     $stmt = db()->prepare(
         "SELECT u.id, u.first_name, u.last_name, u.email, u.phone,
                 ur.role, ur.is_active
-         FROM user_restaurants ur
+         FROM user_companies ur
          JOIN users u ON u.id = ur.user_id
-         WHERE ur.restaurant_id = ? AND ur.user_id = ?"
+         WHERE ur.company_id = ? AND ur.user_id = ?"
     );
-    $stmt->execute([$restaurantId, $userId]);
+    $stmt->execute([$companyId, $userId]);
     $user = $stmt->fetch();
 
     if (!$user) {
-        echo '<div class="alert alert-danger">User not found in this restaurant.</div>';
+        echo '<div class="alert alert-danger">User not found in this company.</div>';
         exit;
     }
     $isEdit = true;
@@ -71,7 +71,7 @@ if ($userId > 0) {
                                value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" required
                                <?php echo $isEdit ? 'readonly style="background-color:#f8f9fa;"' : ''; ?>>
                         <?php if (!$isEdit): ?>
-                        <div class="form-text" id="user-form-email-help">If this email already exists, the user will be linked to this restaurant.</div>
+                        <div class="form-text" id="user-form-email-help">If this email already exists, the user will be linked to this company.</div>
                         <?php endif; ?>
                     </div>
 

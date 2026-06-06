@@ -17,10 +17,10 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $userId = (int)($_POST['user_id'] ?? 0);
 
-if (!$restaurantId || !$userId) {
+if (!$companyId || !$userId) {
     http_response_code(400);
     echo '<div class="alert alert-danger" id="toggle-user-invalid">Invalid request.</div>';
     exit;
@@ -34,20 +34,20 @@ if ($userId === currentUserId()) {
 
 $pdo = db();
 
-// Verify membership exists for this restaurant
-$stmt = $pdo->prepare("SELECT is_active FROM user_restaurants WHERE user_id = ? AND restaurant_id = ?");
-$stmt->execute([$userId, $restaurantId]);
+// Verify membership exists for this company
+$stmt = $pdo->prepare("SELECT is_active FROM user_companies WHERE user_id = ? AND company_id = ?");
+$stmt->execute([$userId, $companyId]);
 $membership = $stmt->fetch();
 
 if (!$membership) {
-    echo '<div class="alert alert-danger" id="toggle-user-notfound">User not found in this restaurant.</div>';
+    echo '<div class="alert alert-danger" id="toggle-user-notfound">User not found in this company.</div>';
     exit;
 }
 
 // Toggle is_active
 $newStatus = $membership['is_active'] ? 0 : 1;
-$stmt = $pdo->prepare("UPDATE user_restaurants SET is_active = ? WHERE user_id = ? AND restaurant_id = ?");
-$stmt->execute([$newStatus, $userId, $restaurantId]);
+$stmt = $pdo->prepare("UPDATE user_companies SET is_active = ? WHERE user_id = ? AND company_id = ?");
+$stmt->execute([$newStatus, $userId, $companyId]);
 
 $statusLabel = $newStatus ? 'activated' : 'deactivated';
 

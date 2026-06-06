@@ -5,10 +5,10 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-availability-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-availability-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -17,10 +17,10 @@ $dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '
 $stmt = db()->prepare(
     "SELECT *
      FROM professional_availability_rules
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
      ORDER BY weekday ASC, start_time ASC, end_time ASC"
 );
-$stmt->execute([$restaurantId]);
+$stmt->execute([$companyId]);
 $rules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $rulesByDay = [];

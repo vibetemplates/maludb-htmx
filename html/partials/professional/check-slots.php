@@ -5,14 +5,14 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $serviceId = (int)($_GET['service_id'] ?? 0);
 $date = trim($_GET['appointment_date'] ?? '');
 $appointmentId = (int)($_GET['appointment_id'] ?? 0);
 $selectedStartAt = trim($_GET['start_at'] ?? '');
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-check-slots-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-check-slots-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -26,13 +26,13 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     exit;
 }
 
-$service = getProfessionalService($restaurantId, $serviceId, ['allow_inactive' => $appointmentId > 0]);
+$service = getProfessionalService($companyId, $serviceId, ['allow_inactive' => $appointmentId > 0]);
 if (!$service) {
     echo '<div class="alert alert-danger" id="professional-check-slots-service-not-found">The selected service is not available.</div>';
     exit;
 }
 
-$slots = getProfessionalAvailableSlots($restaurantId, $serviceId, $date, [
+$slots = getProfessionalAvailableSlots($companyId, $serviceId, $date, [
     'ignore_notice' => true,
     'ignore_horizon' => true,
     'exclude_appointment_id' => $appointmentId,

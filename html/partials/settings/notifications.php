@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 require_once __DIR__ . '/../../../helpers/availability.php';
 
 requireAdmin();
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $pdo = db();
 
 // Handle save
@@ -32,10 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             foreach ($settings as $key => $val) {
                 $stmt = $pdo->prepare(
-                    "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                     VALUES (?, ?, ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
+                    "INSERT INTO settings (company_id, setting_key, setting_value)
+                     VALUES (?, ?, ?) ON CONFLICT (company_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
                 );
-                $stmt->execute([$restaurantId, $key, $val]);
+                $stmt->execute([$companyId, $key, $val]);
             }
 
             $message = '<div class="alert alert-success">Notification settings saved.</div>';
@@ -44,10 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($action === 'save_mailersend') {
             $msKey = trim($_POST['mailersend_api_key'] ?? '');
             $stmt = $pdo->prepare(
-                "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                 VALUES (?, 'mailersend_api_key', ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
+                "INSERT INTO settings (company_id, setting_key, setting_value)
+                 VALUES (?, 'mailersend_api_key', ?) ON CONFLICT (company_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
             );
-            $stmt->execute([$restaurantId, $msKey]);
+            $stmt->execute([$companyId, $msKey]);
             $message = '<div class="alert alert-success">MailerSend settings saved.</div>';
         }
 
@@ -60,10 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             foreach ($smsSettings as $key => $val) {
                 $stmt = $pdo->prepare(
-                    "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                     VALUES (?, ?, ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
+                    "INSERT INTO settings (company_id, setting_key, setting_value)
+                     VALUES (?, ?, ?) ON CONFLICT (company_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
                 );
-                $stmt->execute([$restaurantId, $key, $val]);
+                $stmt->execute([$companyId, $key, $val]);
             }
 
             $message = '<div class="alert alert-success">SMS settings saved.</div>';
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = '<div class="alert alert-warning">Enter a phone number to test.</div>';
             } else {
                 require_once __DIR__ . '/../../../helpers/twilio.php';
-                $result = twilioSend($restaurantId, $testPhone, 'Test SMS from your restaurant reservation system.');
+                $result = twilioSend($companyId, $testPhone, 'Test SMS from your company reservation system.');
                 if ($result['success']) {
                     $message = '<div class="alert alert-success">Test SMS sent successfully! SID: ' . htmlspecialchars($result['sid']) . '</div>';
                 } else {
@@ -87,17 +87,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Load current settings (re-fetch after potential save)
-$confirmEmail   = getRestaurantSetting($restaurantId, 'notification_confirmation_email', '1');
-$confirmSms     = getRestaurantSetting($restaurantId, 'notification_confirmation_sms', '0');
-$reminderEmail  = getRestaurantSetting($restaurantId, 'notification_reminder_email', '1');
-$cancelEmail    = getRestaurantSetting($restaurantId, 'notification_cancellation_email', '1');
-$waitlistSms    = getRestaurantSetting($restaurantId, 'notification_waitlist_sms', '1');
-$fromEmail      = getRestaurantSetting($restaurantId, 'notification_from_email', '');
-$reminderHours  = getRestaurantSetting($restaurantId, 'reminder_hours_before', '24');
-$mailersendApiKey = getRestaurantSetting($restaurantId, 'mailersend_api_key', '');
-$smsApiKey      = getRestaurantSetting($restaurantId, 'sms_api_key', '');
-$smsApiSecret   = getRestaurantSetting($restaurantId, 'sms_api_secret', '');
-$smsFromNumber  = getRestaurantSetting($restaurantId, 'sms_from_number', '');
+$confirmEmail   = getCompanySetting($companyId, 'notification_confirmation_email', '1');
+$confirmSms     = getCompanySetting($companyId, 'notification_confirmation_sms', '0');
+$reminderEmail  = getCompanySetting($companyId, 'notification_reminder_email', '1');
+$cancelEmail    = getCompanySetting($companyId, 'notification_cancellation_email', '1');
+$waitlistSms    = getCompanySetting($companyId, 'notification_waitlist_sms', '1');
+$fromEmail      = getCompanySetting($companyId, 'notification_from_email', '');
+$reminderHours  = getCompanySetting($companyId, 'reminder_hours_before', '24');
+$mailersendApiKey = getCompanySetting($companyId, 'mailersend_api_key', '');
+$smsApiKey      = getCompanySetting($companyId, 'sms_api_key', '');
+$smsApiSecret   = getCompanySetting($companyId, 'sms_api_secret', '');
+$smsFromNumber  = getCompanySetting($companyId, 'sms_from_number', '');
 ?>
 
 <div id="notifications-main">
@@ -117,7 +117,7 @@ $smsFromNumber  = getRestaurantSetting($restaurantId, 'sms_from_number', '');
                     <label for="notif-from-email" class="form-label">From Email Address</label>
                     <input type="email" class="form-control" id="notif-from-email" name="from_email"
                            value="<?php echo htmlspecialchars($fromEmail); ?>"
-                           placeholder="noreply@yourrestaurant.com">
+                           placeholder="noreply@yourcompany.com">
                     <div class="form-text">The email address notifications will be sent from.</div>
                 </div>
 

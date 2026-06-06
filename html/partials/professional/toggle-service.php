@@ -17,18 +17,18 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $serviceId = (int)($_POST['service_id'] ?? 0);
 
-if (!$restaurantId || !$serviceId) {
+if (!$companyId || !$serviceId) {
     http_response_code(400);
     echo '<div class="alert alert-danger" id="professional-toggle-service-invalid">Invalid request.</div>';
     exit;
 }
 
 $pdo = db();
-$stmt = $pdo->prepare("SELECT is_active FROM professional_services WHERE id = ? AND restaurant_id = ?");
-$stmt->execute([$serviceId, $restaurantId]);
+$stmt = $pdo->prepare("SELECT is_active FROM professional_services WHERE id = ? AND company_id = ?");
+$stmt->execute([$serviceId, $companyId]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
@@ -37,8 +37,8 @@ if (!$service) {
 }
 
 $newStatus = ((int)$service['is_active'] === 1) ? 0 : 1;
-$updateStmt = $pdo->prepare("UPDATE professional_services SET is_active = ?, updated_at = NOW() WHERE id = ? AND restaurant_id = ?");
-$updateStmt->execute([$newStatus, $serviceId, $restaurantId]);
+$updateStmt = $pdo->prepare("UPDATE professional_services SET is_active = ?, updated_at = NOW() WHERE id = ? AND company_id = ?");
+$updateStmt->execute([$newStatus, $serviceId, $companyId]);
 
 header('HX-Trigger: refreshProfessionalServicesList');
 

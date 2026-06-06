@@ -22,7 +22,7 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$required = ['first_name', 'last_name', 'email', 'password', 'confirm_password', 'restaurant_name'];
+$required = ['first_name', 'last_name', 'email', 'password', 'confirm_password', 'company_name'];
 $missing = validate_required($required, $_POST);
 
 if (!empty($missing)) {
@@ -33,7 +33,7 @@ if (!empty($missing)) {
 $firstName = sanitize_input($_POST['first_name']);
 $lastName = sanitize_input($_POST['last_name']);
 $email = sanitize_input($_POST['email']);
-$restaurantName = sanitize_input($_POST['restaurant_name']);
+$companyName = sanitize_input($_POST['company_name']);
 $password = $_POST['password'];
 $confirmPassword = $_POST['confirm_password'];
 $locationType = $_POST['location_type'] ?? 'restaurant';
@@ -69,12 +69,12 @@ if ($stmt->fetch()) {
     exit;
 }
 
-// Generate slug from restaurant name
-$slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $restaurantName), '-'));
+// Generate slug from company name
+$slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $companyName), '-'));
 $slugBase = $slug;
 $slugSuffix = 1;
 while (true) {
-    $check = $pdo->prepare("SELECT id FROM restaurants WHERE slug = ?");
+    $check = $pdo->prepare("SELECT id FROM companies WHERE slug = ?");
     $check->execute([$slug]);
     if (!$check->fetch()) break;
     $slug = $slugBase . '-' . $slugSuffix;
@@ -88,31 +88,31 @@ try {
         "INSERT INTO users (first_name, last_name, email, password_hash, company_name, user_type, is_affiliate, is_platform_admin, is_active, created_at)
          VALUES (?, ?, ?, ?, ?, 'system_owner', 1, 0, 1, NOW())"
     );
-    $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $restaurantName]);
+    $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $companyName]);
     $userId = (int)$pdo->lastInsertId();
 
-    // 2. Create restaurant with location_type
+    // 2. Create company with location_type
     $stmt = $pdo->prepare(
-        "INSERT INTO restaurants (name, slug, email, timezone, location_type, is_active, created_at)
+        "INSERT INTO companies (name, slug, email, timezone, location_type, is_active, created_at)
          VALUES (?, ?, ?, 'America/Chicago', ?, 1, NOW())"
     );
-    $stmt->execute([$restaurantName, $slug, $email, $locationType]);
-    $restaurantId = (int)$pdo->lastInsertId();
+    $stmt->execute([$companyName, $slug, $email, $locationType]);
+    $companyId = (int)$pdo->lastInsertId();
 
-    // 3. Assign user as owner/admin of the restaurant
+    // 3. Assign user as owner/admin of the company
     $pdo->prepare(
-        "INSERT INTO user_restaurants (user_id, restaurant_id, role, is_active) VALUES (?, ?, 'admin', 1)"
-    )->execute([$userId, $restaurantId]);
+        "INSERT INTO user_companies (user_id, company_id, role, is_active) VALUES (?, ?, 'admin', 1)"
+    )->execute([$userId, $companyId]);
 
     // 4. Create default settings (template scope only — keys the app actually reads)
     $pdo->prepare(
-        "INSERT INTO settings (restaurant_id, setting_key, setting_value) VALUES
+        "INSERT INTO settings (company_id, setting_key, setting_value) VALUES
             (?, 'confirmation_email_enabled', '1'),
             (?, 'reminder_email_enabled', '1'),
             (?, 'reminder_hours_before', '24'),
             (?, 'cancellation_email_enabled', '1'),
             (?, 'cancellation_policy', 'Please cancel at least 24 hours before your appointment time.')"
-    )->execute(array_fill(0, 5, $restaurantId));
+    )->execute(array_fill(0, 5, $companyId));
 
     $pdo->commit();
 

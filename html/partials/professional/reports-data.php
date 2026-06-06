@@ -139,19 +139,19 @@ function professionalReportsMergeRanges(array $ranges): array {
     return $merged;
 }
 
-function professionalReportsCalculateAvailableMinutes(int $restaurantId, DateTimeImmutable $startDate, DateTimeImmutable $endDate, DateTimeZone $timezone): int {
+function professionalReportsCalculateAvailableMinutes(int $companyId, DateTimeImmutable $startDate, DateTimeImmutable $endDate, DateTimeZone $timezone): int {
     $totalMinutes = 0;
     $cursor = $startDate;
 
     while ($cursor <= $endDate) {
         $dateString = $cursor->format('Y-m-d');
-        $windows = getProfessionalAvailabilityWindowsForDate($restaurantId, $dateString);
+        $windows = getProfessionalAvailabilityWindowsForDate($companyId, $dateString);
 
         if (!empty($windows)) {
             $dayStart = $cursor->setTime(0, 0, 0);
             $dayEnd = $dayStart->modify('+1 day');
             $timeOffBlocks = getProfessionalTimeOffBlocks(
-                $restaurantId,
+                $companyId,
                 $dayStart->format('Y-m-d H:i:s'),
                 $dayEnd->format('Y-m-d H:i:s')
             );
@@ -197,10 +197,10 @@ function professionalReportsCalculateAvailableMinutes(int $restaurantId, DateTim
     return $totalMinutes;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-reports-data-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-reports-data-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -216,7 +216,7 @@ if ($endDate < $startDate) {
     $endDate = $tempDate;
 }
 
-$professionalProfile = getProfessionalProfile($restaurantId);
+$professionalProfile = getProfessionalProfile($companyId);
 if (!$professionalProfile) {
     echo '<div class="alert alert-warning" id="professional-reports-data-no-profile">Professional settings are not configured yet.</div>';
     exit;
@@ -239,23 +239,23 @@ $metricsStmt = $pdo->prepare(
         SUM(CASE WHEN status = 'completed' THEN COALESCE(price, 0) ELSE 0 END) AS completed_revenue,
         SUM(CASE WHEN status NOT IN ('cancelled', 'no_show') THEN duration_minutes ELSE 0 END) AS booked_minutes
      FROM professional_appointments
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND appointment_date BETWEEN ? AND ?"
 );
-$metricsStmt->execute([$restaurantId, $startDate, $endDate]);
+$metricsStmt->execute([$companyId, $startDate, $endDate]);
 $metrics = $metricsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
 $currencyStmt = $pdo->prepare(
     "SELECT currency_code
      FROM professional_appointments
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND appointment_date BETWEEN ? AND ?
        AND currency_code IS NOT NULL
        AND currency_code != ''
      ORDER BY id DESC
      LIMIT 1"
 );
-$currencyStmt->execute([$restaurantId, $startDate, $endDate]);
+$currencyStmt->execute([$companyId, $startDate, $endDate]);
 $currencyCode = strtoupper((string)$currencyStmt->fetchColumn());
 if ($currencyCode === '') {
     $currencyCode = 'USD';
@@ -274,7 +274,7 @@ $issueAppointments = $cancelledAppointments + $noShowAppointments;
 $issueRate = professionalReportsPercent($issueAppointments, $totalAppointments);
 
 $totalAvailableMinutes = professionalReportsCalculateAvailableMinutes(
-    $restaurantId,
+    $companyId,
     $startDateObject,
     $endDateObject,
     $timezone
@@ -288,12 +288,12 @@ $periodBuckets = professionalReportsBuildBuckets($startDateObject, $endDateObjec
 $periodStmt = $pdo->prepare(
     "SELECT appointment_date, status, COUNT(*) AS appointment_count
      FROM professional_appointments
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND appointment_date BETWEEN ? AND ?
      GROUP BY appointment_date, status
      ORDER BY appointment_date ASC"
 );
-$periodStmt->execute([$restaurantId, $startDate, $endDate]);
+$periodStmt->execute([$companyId, $startDate, $endDate]);
 $periodRows = $periodStmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($periodRows as $row) {
@@ -338,12 +338,12 @@ $serviceStmt = $pdo->prepare(
         SUM(CASE WHEN status NOT IN ('cancelled', 'no_show') THEN duration_minutes ELSE 0 END) AS booked_minutes,
         SUM(CASE WHEN status NOT IN ('cancelled', 'no_show') THEN COALESCE(price, 0) ELSE 0 END) AS revenue
      FROM professional_appointments
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND appointment_date BETWEEN ? AND ?
      GROUP BY COALESCE(NULLIF(service_name, ''), 'Service')
      ORDER BY revenue DESC, booked_minutes DESC, service_name ASC"
 );
-$serviceStmt->execute([$restaurantId, $startDate, $endDate]);
+$serviceStmt->execute([$companyId, $startDate, $endDate]);
 $serviceRows = $serviceStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $serviceChartLabels = [];
@@ -375,15 +375,15 @@ $topClientsStmt = $pdo->prepare(
      FROM professional_clients c
      INNER JOIN professional_appointments a
         ON a.client_id = c.id
-       AND a.restaurant_id = c.restaurant_id
-     WHERE c.restaurant_id = ?
+       AND a.company_id = c.company_id
+     WHERE c.company_id = ?
        AND a.appointment_date BETWEEN ? AND ?
      GROUP BY c.id, c.first_name, c.last_name, c.email, c.phone
      HAVING SUM(CASE WHEN a.status NOT IN ('cancelled', 'no_show') THEN 1 ELSE 0 END) > 0
      ORDER BY visit_count DESC, revenue DESC, last_visit_at DESC
      LIMIT 10"
 );
-$topClientsStmt->execute([$restaurantId, $startDate, $endDate]);
+$topClientsStmt->execute([$companyId, $startDate, $endDate]);
 $topClients = $topClientsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $outcomeRows = [

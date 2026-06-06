@@ -5,18 +5,18 @@ require_once '../../../helpers/csrf.php';
 requireAuth();
 requireAdmin();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-// Query staff users for this restaurant
+// Query staff users for this company
 $stmt = db()->prepare(
     "SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.last_login_at,
             ur.role, ur.is_active as membership_active
-     FROM user_restaurants ur
+     FROM user_companies ur
      JOIN users u ON u.id = ur.user_id
-     WHERE ur.restaurant_id = ?
+     WHERE ur.company_id = ?
      ORDER BY ur.role ASC, u.last_name ASC"
 );
-$stmt->execute([$restaurantId]);
+$stmt->execute([$companyId]);
 $users = $stmt->fetchAll();
 ?>
 <div class="main-content" id="users-main"

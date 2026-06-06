@@ -6,15 +6,15 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $appointmentId = (int)($_GET['appointment_id'] ?? 0);
 $requestedClientId = (int)($_GET['client_id'] ?? 0);
 $appointment = null;
 $requestedClient = null;
 $isEdit = false;
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-appointment-form-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-appointment-form-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -28,10 +28,10 @@ if ($appointmentId > 0) {
             c.phone AS client_phone
          FROM professional_appointments a
          JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.id = ? AND a.restaurant_id = ?
+         WHERE a.id = ? AND a.company_id = ?
          LIMIT 1"
     );
-    $appointmentStmt->execute([$appointmentId, $restaurantId]);
+    $appointmentStmt->execute([$appointmentId, $companyId]);
     $appointment = $appointmentStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$appointment) {
@@ -46,10 +46,10 @@ if (!$isEdit && $requestedClientId > 0) {
     $requestedClientStmt = db()->prepare(
         "SELECT id, first_name, last_name, email, phone
          FROM professional_clients
-         WHERE id = ? AND restaurant_id = ?
+         WHERE id = ? AND company_id = ?
          LIMIT 1"
     );
-    $requestedClientStmt->execute([$requestedClientId, $restaurantId]);
+    $requestedClientStmt->execute([$requestedClientId, $companyId]);
     $requestedClient = $requestedClientStmt->fetch(PDO::FETCH_ASSOC);
 }
 
@@ -57,11 +57,11 @@ $currentServiceId = (int)($appointment['service_id'] ?? 0);
 $servicesStmt = db()->prepare(
     "SELECT *
      FROM professional_services
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
        AND (is_active = 1 OR id = ?)
      ORDER BY is_active DESC, sort_order ASC, name ASC"
 );
-$servicesStmt->execute([$restaurantId, $currentServiceId]);
+$servicesStmt->execute([$companyId, $currentServiceId]);
 $services = $servicesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $selectedDate = $appointment ? date('Y-m-d', strtotime($appointment['start_at'])) : trim($_GET['date'] ?? date('Y-m-d'));

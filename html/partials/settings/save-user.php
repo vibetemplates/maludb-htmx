@@ -18,10 +18,10 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
-if (!$restaurantId) {
+$companyId = currentCompanyId();
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="save-user-no-restaurant">No restaurant selected.</div>';
+    echo '<div class="alert alert-danger" id="save-user-no-company">No company selected.</div>';
     exit;
 }
 
@@ -68,12 +68,12 @@ try {
     $pdo->beginTransaction();
 
     if ($isEdit) {
-        // Verify user belongs to this restaurant
-        $stmt = $pdo->prepare("SELECT user_id FROM user_restaurants WHERE user_id = ? AND restaurant_id = ?");
-        $stmt->execute([$userId, $restaurantId]);
+        // Verify user belongs to this company
+        $stmt = $pdo->prepare("SELECT user_id FROM user_companies WHERE user_id = ? AND company_id = ?");
+        $stmt->execute([$userId, $companyId]);
         if (!$stmt->fetch()) {
             $pdo->rollBack();
-            echo '<div class="alert alert-danger" id="save-user-notfound">User not found in this restaurant.</div>';
+            echo '<div class="alert alert-danger" id="save-user-notfound">User not found in this company.</div>';
             exit;
         }
 
@@ -86,9 +86,9 @@ try {
             $stmt->execute([$firstName, $lastName, $phone ?: null, $userId]);
         }
 
-        // Update role in user_restaurants
-        $stmt = $pdo->prepare("UPDATE user_restaurants SET role = ? WHERE user_id = ? AND restaurant_id = ?");
-        $stmt->execute([$role, $userId, $restaurantId]);
+        // Update role in user_companies
+        $stmt = $pdo->prepare("UPDATE user_companies SET role = ? WHERE user_id = ? AND company_id = ?");
+        $stmt->execute([$role, $userId, $companyId]);
 
     } else {
         // Check if user email already exists
@@ -99,12 +99,12 @@ try {
         if ($existingUser) {
             $userId = $existingUser['id'];
 
-            // Check if already linked to this restaurant
-            $stmt = $pdo->prepare("SELECT id FROM user_restaurants WHERE user_id = ? AND restaurant_id = ?");
-            $stmt->execute([$userId, $restaurantId]);
+            // Check if already linked to this company
+            $stmt = $pdo->prepare("SELECT id FROM user_companies WHERE user_id = ? AND company_id = ?");
+            $stmt->execute([$userId, $companyId]);
             if ($stmt->fetch()) {
                 $pdo->rollBack();
-                echo '<div class="alert alert-danger" id="save-user-exists-error">This user is already a member of this restaurant.</div>';
+                echo '<div class="alert alert-danger" id="save-user-exists-error">This user is already a member of this company.</div>';
                 exit;
             }
 
@@ -124,12 +124,12 @@ try {
             $userId = $pdo->lastInsertId();
         }
 
-        // Create user_restaurants entry
+        // Create user_companies entry
         $stmt = $pdo->prepare(
-            "INSERT INTO user_restaurants (user_id, restaurant_id, role, is_active)
+            "INSERT INTO user_companies (user_id, company_id, role, is_active)
              VALUES (?, ?, ?, 1)"
         );
-        $stmt->execute([$userId, $restaurantId, $role]);
+        $stmt->execute([$userId, $companyId, $role]);
     }
 
     $pdo->commit();

@@ -18,11 +18,11 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-client-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-client-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -72,8 +72,8 @@ $pdo = db();
 $isEdit = $clientId > 0;
 
 if ($isEdit) {
-    $clientCheckStmt = $pdo->prepare("SELECT id FROM professional_clients WHERE id = ? AND restaurant_id = ? LIMIT 1");
-    $clientCheckStmt->execute([$clientId, $restaurantId]);
+    $clientCheckStmt = $pdo->prepare("SELECT id FROM professional_clients WHERE id = ? AND company_id = ? LIMIT 1");
+    $clientCheckStmt->execute([$clientId, $companyId]);
     if (!$clientCheckStmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-client-not-found">Professional client not found.</div>';
         exit;
@@ -81,8 +81,8 @@ if ($isEdit) {
 }
 
 if ($email !== '') {
-    $emailQuery = "SELECT id FROM professional_clients WHERE restaurant_id = ? AND email = ?";
-    $emailParams = [$restaurantId, $email];
+    $emailQuery = "SELECT id FROM professional_clients WHERE company_id = ? AND email = ?";
+    $emailParams = [$companyId, $email];
     if ($isEdit) {
         $emailQuery .= " AND id != ?";
         $emailParams[] = $clientId;
@@ -114,7 +114,7 @@ if ($isEdit) {
             service_postal_code = ?,
             last_service_date = ?,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
     $updateStmt->execute([
         $firstName,
@@ -132,12 +132,12 @@ if ($isEdit) {
         $servicePostalCode !== '' ? $servicePostalCode : null,
         $lastServiceDate !== '' ? $lastServiceDate : null,
         $clientId,
-        $restaurantId,
+        $companyId,
     ]);
 } else {
     $insertStmt = $pdo->prepare(
         "INSERT INTO professional_clients (
-            restaurant_id,
+            company_id,
             first_name,
             last_name,
             email,
@@ -157,7 +157,7 @@ if ($isEdit) {
          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
     );
     $insertStmt->execute([
-        $restaurantId,
+        $companyId,
         $firstName,
         $lastName,
         $email !== '' ? $email : null,

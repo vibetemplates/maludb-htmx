@@ -50,7 +50,7 @@ if (empty($apiKey)) {
 $pdo = db();
 
 // --- Auto-populate restaurant info ---
-$stmt = $pdo->query("SELECT id, name, slug, phone FROM restaurants ORDER BY id ASC LIMIT 1");
+$stmt = $pdo->query("SELECT id, name, slug, phone FROM companies ORDER BY id ASC LIMIT 1");
 $restaurant = $stmt->fetch();
 dclog("RESTAURANT: " . ($restaurant ? json_encode($restaurant) : 'none'));
 
@@ -68,7 +68,7 @@ if ($restaurant) {
     $placeholders = implode(',', array_fill(0, count($promptKeys), '?'));
     $stmt = $pdo->prepare(
         "SELECT setting_key, setting_value FROM settings
-         WHERE restaurant_id = ? AND setting_key IN ({$placeholders})"
+         WHERE company_id = ? AND setting_key IN ({$placeholders})"
     );
     $stmt->execute(array_merge([$rid], $promptKeys));
     foreach ($stmt->fetchAll() as $ps) {

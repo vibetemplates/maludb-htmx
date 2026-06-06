@@ -18,10 +18,10 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
-if (!$restaurantId) {
+$companyId = currentCompanyId();
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="save-profile-no-restaurant">No restaurant selected.</div>';
+    echo '<div class="alert alert-danger" id="save-profile-no-company">No company selected.</div>';
     exit;
 }
 
@@ -30,7 +30,7 @@ $name = trim($_POST['name'] ?? '');
 $timezone = trim($_POST['timezone'] ?? '');
 
 if ($name === '') {
-    echo '<div class="alert alert-danger" id="save-profile-name-error">Restaurant name is required.</div>';
+    echo '<div class="alert alert-danger" id="save-profile-name-error">Company name is required.</div>';
     exit;
 }
 
@@ -60,9 +60,9 @@ $city = trim($_POST['city'] ?? '');
 $state = trim($_POST['state'] ?? '');
 $postalCode = trim($_POST['postal_code'] ?? '');
 
-// Update restaurant record scoped to current restaurant_id
+// Update company record scoped to current company id
 $stmt = db()->prepare(
-    "UPDATE restaurants SET
+    "UPDATE companies SET
         name = ?, phone = ?, email = ?, address_line1 = ?,
         city = ?, state = ?, postal_code = ?, website = ?, timezone = ?
      WHERE id = ?"
@@ -71,13 +71,13 @@ $stmt = db()->prepare(
 $stmt->execute([
     $name, $phone ?: null, $email ?: null, $addressLine1 ?: null,
     $city ?: null, $state ?: null, $postalCode ?: null, $website ?: null, $timezone,
-    $restaurantId
+    $companyId
 ]);
 
-// Update session with new restaurant name
-$_SESSION['current_restaurant_name'] = $name;
+// Update session with new company name
+$_SESSION['current_company_name'] = $name;
 
 echo '<div class="alert alert-success alert-dismissible fade show" id="save-profile-success">
-        <i class="feather-check-circle me-1"></i> Restaurant profile updated successfully.
+        <i class="feather-check-circle me-1"></i> Company profile updated successfully.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>';

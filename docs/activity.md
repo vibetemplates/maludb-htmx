@@ -3455,3 +3455,23 @@ verifies, token single-use enforced; original hash restored and test rows cleane
 `<img src="/assets/images/logo.png">` (`#login-brand-logo`, 48px high, width auto). The
 `.login-brand` block styles (centering, bottom margin) still apply; the text-gradient rules are
 inert on an image. Browser title left as-is (titles cannot hold images).
+
+---
+
+## 2026-06-06 — Plan: tenant rename restaurants → companies (copy, not rename)
+
+**Prompt:** "What changes to we need to make to remove the restaurants table and the user_restaurants table to make the template more generic."
+
+**Decisions (Ed):** generic name = `companies` / `user_companies`; full rename in app code; **do not rename the existing restaurants/user_restaurants tables — another application uses them — make a copy instead**.
+
+**Actions:** swept the codebase for all references (~160 PHP files still mention the tables, but many are orphaned domain modules already slated for Phase-3 deletion in the template-conversion plan). Wrote the plan as a new section in `tasks/todo.md` ("Plan — 2026-06-06 (Tenant rename: restaurants → companies, COPY not rename)"): Phase 1 DB copy script + install.sql update, Phases 2–5 code rename scoped to live template code only, Phase 6 verification. One open question flagged: whether the other application also uses the 9 dependent template tables (settings, professional_*, todos, api_tokens) — determines if their restaurant_id columns can be renamed in the live DB. Awaiting plan verification before starting work.
+
+## 2026-06-06 — Tenant rename executed: restaurants → companies (copy, not rename)
+
+**Prompt:** (continuation) "Yes" — plan approved; confirmed the other application does NOT use the 9 dependent template tables.
+
+**Database:** wrote and ran `docs/sql/companies.sql` against the live PostgreSQL DB in one transaction: created `companies` (21 rows) + `user_companies` (13 rows) as faithful copies of restaurants/user_restaurants (same ids, sequences synced); renamed restaurant_id → company_id and repointed FKs to companies(id) on settings, professional_profiles/services/availability_rules/time_off/clients/appointments, todos, api_tokens (+ index/constraint renames). Old tables verified untouched. `docs/sql/install.sql` genericized to companies/user_companies/company_id and re-verified twice in a scratch schema.
+
+**Code (~75 files, all php -l clean):** helpers/restaurant.php → helpers/company.php (company-named functions + deprecated alias block for orphaned legacy modules); auth.php session keys current_company_id/name, switchCompany(); app.php switcher → partials/auth/switch-company.php (company_id); registration forms/handlers (company_name field, companies/user_companies inserts); api/v1 fully swept (user_companies join, company_id/company_role keys); settings/professional/todos/dashboard/pro-booking partials and professional helpers swept via 4 parallel agents; deferred AI-integration files (retell/sms/mcp, professional-voice-api, retell-auth, meal-status) got surgical SQL-only fixes. Legacy tables keep restaurant_id everywhere.
+
+**Verified live:** login → company context set; getUserCompanies/getCompany/getCompanySetting/switchCompany; module queries (todos, settings, users, professional, api-token join); registration-flow inserts incl. ON CONFLICT (company_id, setting_key) upsert (rolled back). Review section added to tasks/todo.md; deferred decision #6 closed.

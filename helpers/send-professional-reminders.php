@@ -7,7 +7,7 @@
  */
 
 require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/restaurant.php';
+require_once __DIR__ . '/company.php';
 require_once __DIR__ . '/availability.php';
 require_once __DIR__ . '/professional-booking.php';
 require_once __DIR__ . '/professional-notifications.php';
@@ -15,12 +15,12 @@ require_once __DIR__ . '/professional-notifications.php';
 $pdo = db();
 $profilesStmt = $pdo->query(
     "SELECT
-        pp.restaurant_id,
+        pp.company_id,
         COALESCE(NULLIF(pp.display_name, ''), NULLIF(pp.business_name, ''), r.name) AS business_name
      FROM professional_profiles pp
-     INNER JOIN restaurants r ON r.id = pp.restaurant_id
+     INNER JOIN companies r ON r.id = pp.company_id
      WHERE r.is_active = 1
-     ORDER BY pp.restaurant_id ASC"
+     ORDER BY pp.company_id ASC"
 );
 $profiles = $profilesStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -28,28 +28,28 @@ $totalSent = 0;
 $totalFailed = 0;
 
 foreach ($profiles as $profile) {
-    $restaurantId = (int)$profile['restaurant_id'];
-    applyRestaurantTimezone($restaurantId);
+    $companyId = (int)$profile['company_id'];
+    applyCompanyTimezone($companyId);
 
-    $emailEnabled = getRestaurantSetting($restaurantId, 'notification_reminder_email', '1') === '1';
-    $smsEnabled = getRestaurantSetting($restaurantId, 'notification_reminder_sms', '0') === '1';
+    $emailEnabled = getCompanySetting($companyId, 'notification_reminder_email', '1') === '1';
+    $smsEnabled = getCompanySetting($companyId, 'notification_reminder_sms', '0') === '1';
 
     if (!$emailEnabled && !$smsEnabled) {
         continue;
     }
 
-    $hoursBefore = max(1, (int)getRestaurantSetting($restaurantId, 'reminder_hours_before', '24'));
+    $hoursBefore = max(1, (int)getCompanySetting($companyId, 'reminder_hours_before', '24'));
 
     $appointmentsStmt = $pdo->prepare(
         "SELECT a.id, a.confirmation_code, a.start_at, a.updated_at
          FROM professional_appointments a
-         WHERE a.restaurant_id = ?
+         WHERE a.company_id = ?
            AND a.status IN ('pending', 'confirmed')
            AND TIMESTAMPDIFF(HOUR, NOW(), a.start_at) BETWEEN 0 AND ?
            AND NOT EXISTS (
                SELECT 1
                FROM activity_log al
-               WHERE al.restaurant_id = a.restaurant_id
+               WHERE al.restaurant_id = a.company_id
                  AND al.entity_type = 'professional_appointment'
                  AND al.entity_id = a.id
                  AND al.action = 'reminder_sent'
@@ -57,7 +57,7 @@ foreach ($profiles as $profile) {
            )
          ORDER BY a.start_at ASC"
     );
-    $appointmentsStmt->execute([$restaurantId, $hoursBefore]);
+    $appointmentsStmt->execute([$companyId, $hoursBefore]);
     $appointments = $appointmentsStmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($appointments as $appointment) {
@@ -69,7 +69,7 @@ foreach ($profiles as $profile) {
             $totalSent++;
 
             professionalLogAppointmentActivity(
-                $restaurantId,
+                $companyId,
                 null,
                 $appointmentId,
                 'reminder_sent',

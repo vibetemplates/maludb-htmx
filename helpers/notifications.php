@@ -89,18 +89,18 @@ function getReservationVars(int $reservationId): ?array
 /**
  * Send an email via MailerSend API
  */
-function sendEmail(int $restaurantId, string $to, string $subject, string $htmlBody, string $textBody = ''): bool
+function sendEmail(int $companyId, string $to, string $subject, string $htmlBody, string $textBody = ''): bool
 {
-    // Get restaurant info
-    $stmt = db()->prepare("SELECT name, email FROM restaurants WHERE id = ?");
-    $stmt->execute([$restaurantId]);
-    $rest = $stmt->fetch();
+    // Get company info
+    $stmt = db()->prepare("SELECT name, email FROM companies WHERE id = ?");
+    $stmt->execute([$companyId]);
+    $company = $stmt->fetch();
 
-    $fromEmail = getRestaurantSetting($restaurantId, 'notification_from_email', $rest['email'] ?? 'noreply@example.com');
-    $fromName  = $rest['name'] ?? 'Restaurant';
+    $fromEmail = getCompanySetting($companyId, 'notification_from_email', $company['email'] ?? 'noreply@example.com');
+    $fromName  = $company['name'] ?? 'Company';
 
     // Get MailerSend API key
-    $apiKey = getRestaurantSetting($restaurantId, 'mailersend_api_key', '');
+    $apiKey = getCompanySetting($companyId, 'mailersend_api_key', '');
 
     // Fallback to PHP mail() if no API key configured
     if ($apiKey === '') {
@@ -138,7 +138,7 @@ function sendEmail(int $restaurantId, string $to, string $subject, string $htmlB
         $mailersend->email->send($emailParams);
         return true;
     } catch (\Exception $e) {
-        error_log("MailerSend error for restaurant {$restaurantId}: " . $e->getMessage());
+        error_log("MailerSend error for company {$companyId}: " . $e->getMessage());
         return false;
     }
 }

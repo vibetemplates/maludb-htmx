@@ -19,7 +19,7 @@ require_once __DIR__ . '/../../../helpers/db.php';
 require_once __DIR__ . '/../../../helpers/availability.php';
 require_once __DIR__ . '/../../../helpers/twilio.php';
 require_once __DIR__ . '/../../../helpers/openai-sms.php';
-require_once __DIR__ . '/../../../helpers/restaurant.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 
 // --- Logging ---
 define('SMS_WEBHOOK_LOG', __DIR__ . '/../../../logs/sms-webhook.log');
@@ -60,7 +60,7 @@ $toDigits = normalizePhone($toNumber);
 $rpnStmt = $pdo->prepare(
     "SELECT rpn.id as phone_number_id, rpn.restaurant_id, r.location_type, r.name as restaurant_name
      FROM restaurant_phone_numbers rpn
-     JOIN restaurants r ON rpn.restaurant_id = r.id
+     JOIN companies r ON rpn.restaurant_id = r.id
      WHERE rpn.is_active = 1
      ORDER BY rpn.id"
 );
@@ -85,7 +85,7 @@ if (!$restaurantId) {
     $stmt = $pdo->prepare(
         "SELECT tap.*, r.location_type, r.id as restaurant_id, r.slug, r.name as restaurant_name
          FROM text_agent_prompts tap
-         JOIN restaurants r ON tap.restaurant_id = r.id
+         JOIN companies r ON tap.restaurant_id = r.id
          WHERE tap.phone_number = ?
          LIMIT 1"
     );
@@ -101,9 +101,9 @@ if (!$restaurantId) {
 // 3. Fallback: check sms_from_number in settings
 if (!$restaurantId) {
     $stmt = $pdo->prepare(
-        "SELECT s.restaurant_id, r.location_type, r.slug, r.name as restaurant_name
+        "SELECT s.company_id AS restaurant_id, r.location_type, r.slug, r.name as restaurant_name
          FROM settings s
-         JOIN restaurants r ON s.restaurant_id = r.id
+         JOIN companies r ON s.company_id = r.id
          WHERE s.setting_key = 'sms_from_number' AND s.setting_value = ?
          LIMIT 1"
     );
@@ -131,7 +131,7 @@ $fromDigits = normalizePhone($fromNumber);
 $fromDigits10 = strlen($fromDigits) > 10 ? substr($fromDigits, -10) : $fromDigits;
 
 $clientStmt = $pdo->prepare(
-    "SELECT id, phone FROM professional_clients WHERE restaurant_id = ? AND phone IS NOT NULL AND phone != ''"
+    "SELECT id, phone FROM professional_clients WHERE company_id = ? AND phone IS NOT NULL AND phone != ''"
 );
 $clientStmt->execute([$restaurantId]);
 $clients = $clientStmt->fetchAll();

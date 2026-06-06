@@ -40,15 +40,15 @@ function handleLogin(): void {
         api_error('Invalid email or password.', 'AUTH_REQUIRED', 401);
     }
 
-    // Get their restaurant assignment
+    // Get their company assignment
     $stmt = $pdo->prepare(
-        "SELECT restaurant_id, role FROM user_restaurants WHERE user_id = ? LIMIT 1"
+        "SELECT company_id, role FROM user_companies WHERE user_id = ? LIMIT 1"
     );
     $stmt->execute([$user['id']]);
     $ur = $stmt->fetch();
 
     if (!$ur) {
-        api_error('No restaurant assigned to this account.', 'FORBIDDEN', 403);
+        api_error('No company assigned to this account.', 'FORBIDDEN', 403);
     }
 
     // Generate token
@@ -57,10 +57,10 @@ function handleLogin(): void {
     $expiresAt = date('Y-m-d H:i:s', strtotime('+90 days'));
 
     $stmt = $pdo->prepare(
-        "INSERT INTO api_tokens (user_id, restaurant_id, token_hash, device_name, expires_at)
+        "INSERT INTO api_tokens (user_id, company_id, token_hash, device_name, expires_at)
          VALUES (?, ?, ?, ?, ?)"
     );
-    $stmt->execute([$user['id'], $ur['restaurant_id'], $tokenHash, $device, $expiresAt]);
+    $stmt->execute([$user['id'], $ur['company_id'], $tokenHash, $device, $expiresAt]);
 
     api_success([
         'token' => $rawToken,
@@ -71,8 +71,8 @@ function handleLogin(): void {
             'email' => $user['email'],
             'role'  => $user['role'],
         ],
-        'restaurant_id'   => (int)$ur['restaurant_id'],
-        'restaurant_role'  => $ur['role'],
+        'company_id'   => (int)$ur['company_id'],
+        'company_role'  => $ur['role'],
     ]);
 }
 

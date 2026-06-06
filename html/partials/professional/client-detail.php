@@ -5,11 +5,11 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $clientId = (int)($_GET['id'] ?? 0);
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-client-detail-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-client-detail-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -21,10 +21,10 @@ if ($clientId <= 0) {
 $clientStmt = db()->prepare(
     "SELECT *
      FROM professional_clients
-     WHERE id = ? AND restaurant_id = ?
+     WHERE id = ? AND company_id = ?
      LIMIT 1"
 );
-$clientStmt->execute([$clientId, $restaurantId]);
+$clientStmt->execute([$clientId, $companyId]);
 $client = $clientStmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$client) {
@@ -41,9 +41,9 @@ $statsStmt = db()->prepare(
         SUM(CASE WHEN status IN ('cancelled', 'no_show') THEN 1 ELSE 0 END) AS issue_appointments,
         MAX(start_at) AS last_appointment_at
      FROM professional_appointments
-     WHERE restaurant_id = ? AND client_id = ?"
+     WHERE company_id = ? AND client_id = ?"
 );
-$statsStmt->execute([$restaurantId, $clientId]);
+$statsStmt->execute([$companyId, $clientId]);
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: [
     'total_appointments' => 0,
     'completed_appointments' => 0,
@@ -58,12 +58,12 @@ $historyStmt = db()->prepare(
         a.*,
         s.color AS service_color
      FROM professional_appointments a
-     LEFT JOIN professional_services s ON s.id = a.service_id AND s.restaurant_id = a.restaurant_id
-     WHERE a.restaurant_id = ? AND a.client_id = ?
+     LEFT JOIN professional_services s ON s.id = a.service_id AND s.company_id = a.company_id
+     WHERE a.company_id = ? AND a.client_id = ?
      ORDER BY a.start_at DESC, a.created_at DESC
      LIMIT 50"
 );
-$historyStmt->execute([$restaurantId, $clientId]);
+$historyStmt->execute([$companyId, $clientId]);
 $history = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $statusColors = [
@@ -85,7 +85,7 @@ $smsStmt = db()->prepare(
      WHERE restaurant_id = ? AND client_id = ?
      ORDER BY created_at DESC LIMIT 50"
 );
-$smsStmt->execute([$restaurantId, $clientId]);
+$smsStmt->execute([$companyId, $clientId]);
 $comms = array_merge($comms, $smsStmt->fetchAll(PDO::FETCH_ASSOC));
 
 // Voice calls
@@ -96,7 +96,7 @@ $voiceStmt = db()->prepare(
      WHERE restaurant_id = ? AND client_id = ?
      ORDER BY created_at DESC LIMIT 50"
 );
-$voiceStmt->execute([$restaurantId, $clientId]);
+$voiceStmt->execute([$companyId, $clientId]);
 $comms = array_merge($comms, $voiceStmt->fetchAll(PDO::FETCH_ASSOC));
 
 // Email messages
@@ -107,7 +107,7 @@ $emailStmt = db()->prepare(
      WHERE restaurant_id = ? AND client_id = ?
      ORDER BY created_at DESC LIMIT 50"
 );
-$emailStmt->execute([$restaurantId, $clientId]);
+$emailStmt->execute([$companyId, $clientId]);
 $comms = array_merge($comms, $emailStmt->fetchAll(PDO::FETCH_ASSOC));
 
 // Sort all communications by date descending

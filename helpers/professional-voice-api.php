@@ -28,7 +28,7 @@ function proVoiceResolveProfile(string $slug): array
         return ['success' => false, 'error' => 'Professional profile not found.'];
     }
 
-    $restaurantId = (int)$profile['restaurant_id'];
+    $restaurantId = (int)$profile['company_id'];
 
     // Apply timezone so date() calls use the professional's timezone
     try {
@@ -48,7 +48,7 @@ function proVoiceGenerateConfirmationCode(PDO $pdo, int $restaurantId): string
     for ($attempt = 0; $attempt < 20; $attempt++) {
         $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
         $stmt = $pdo->prepare(
-            "SELECT COUNT(*) FROM professional_appointments WHERE restaurant_id = ? AND confirmation_code = ?"
+            "SELECT COUNT(*) FROM professional_appointments WHERE company_id = ? AND confirmation_code = ?"
         );
         $stmt->execute([$restaurantId, $code]);
         if ((int)$stmt->fetchColumn() === 0) {
@@ -90,9 +90,9 @@ function proVoiceResolveProfessionalUserId(
 
     $stmt = $pdo->prepare(
         "SELECT ur.user_id
-         FROM user_restaurants ur
+         FROM user_companies ur
          INNER JOIN users u ON u.id = ur.user_id
-         WHERE ur.restaurant_id = ? AND ur.is_active = 1
+         WHERE ur.company_id = ? AND ur.is_active = 1
          ORDER BY CASE WHEN ur.role = 'admin' THEN 0 ELSE 1 END, ur.user_id ASC
          LIMIT 1"
     );
@@ -117,7 +117,7 @@ function proVoiceListServices(string $slug): array
     $stmt = db()->prepare(
         "SELECT id, name, description, duration_minutes, price, currency_code, location_type
          FROM professional_services
-         WHERE restaurant_id = ? AND is_active = 1 AND is_public_bookable = 1
+         WHERE company_id = ? AND is_active = 1 AND is_public_bookable = 1
          ORDER BY sort_order ASC, name ASC"
     );
     $stmt->execute([$restaurantId]);
@@ -280,12 +280,12 @@ function proVoiceBookAppointment(
     // Find or create client (match save-appointment.php: update existing client info)
     $existingClient = null;
     if ($clientEmail !== '') {
-        $stmt = $pdo->prepare("SELECT id FROM professional_clients WHERE restaurant_id = ? AND email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id FROM professional_clients WHERE company_id = ? AND email = ? LIMIT 1");
         $stmt->execute([$restaurantId, trim($clientEmail)]);
         $existingClient = $stmt->fetch();
     }
     if (!$existingClient) {
-        $stmt = $pdo->prepare("SELECT id FROM professional_clients WHERE restaurant_id = ? AND phone = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id FROM professional_clients WHERE company_id = ? AND phone = ? LIMIT 1");
         $stmt->execute([$restaurantId, trim($clientPhone)]);
         $existingClient = $stmt->fetch();
     }
@@ -294,12 +294,12 @@ function proVoiceBookAppointment(
         $clientId = (int)$existingClient['id'];
         $stmt = $pdo->prepare(
             "UPDATE professional_clients SET first_name = ?, last_name = ?, email = ?, phone = ?, updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
         $stmt->execute([$firstName, $lastName, $clientEmail ?: null, trim($clientPhone), $clientId, $restaurantId]);
     } else {
         $stmt = $pdo->prepare(
-            "INSERT INTO professional_clients (restaurant_id, first_name, last_name, phone, email, created_at, updated_at)
+            "INSERT INTO professional_clients (company_id, first_name, last_name, phone, email, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, NOW(), NOW())"
         );
         $stmt->execute([$restaurantId, $firstName, $lastName, trim($clientPhone), $clientEmail ?: null]);
@@ -331,7 +331,7 @@ function proVoiceBookAppointment(
     // Insert appointment
     $stmt = $pdo->prepare(
         "INSERT INTO professional_appointments (
-            restaurant_id, professional_user_id, client_id, service_id,
+            company_id, professional_user_id, client_id, service_id,
             status, source, appointment_date, start_at, end_at,
             service_name, duration_minutes,
             buffer_before_minutes, buffer_after_minutes,
@@ -373,7 +373,7 @@ function proVoiceBookAppointment(
 
     // Update client's last_appointment_at
     try {
-        $stmt = $pdo->prepare("UPDATE professional_clients SET last_appointment_at = ? WHERE id = ? AND restaurant_id = ?");
+        $stmt = $pdo->prepare("UPDATE professional_clients SET last_appointment_at = ? WHERE id = ? AND company_id = ?");
         $stmt->execute([$slot['start_at'], $clientId, $restaurantId]);
     } catch (Throwable $e) {}
 
@@ -434,7 +434,7 @@ function proVoiceLookupAppointment(string $slug, string $codeOrPhone): array
         "SELECT a.*, c.first_name, c.last_name, c.phone AS client_phone, c.email AS client_email
          FROM professional_appointments a
          INNER JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.restaurant_id = ? AND a.confirmation_code = ?
+         WHERE a.company_id = ? AND a.confirmation_code = ?
          LIMIT 1"
     );
     $stmt->execute([$restaurantId, strtoupper(trim($codeOrPhone))]);
@@ -449,7 +449,7 @@ function proVoiceLookupAppointment(string $slug, string $codeOrPhone): array
             "SELECT a.*, c.first_name, c.last_name, c.phone AS client_phone, c.email AS client_email
              FROM professional_appointments a
              INNER JOIN professional_clients c ON c.id = a.client_id
-             WHERE a.restaurant_id = ? AND c.phone = ?
+             WHERE a.company_id = ? AND c.phone = ?
                AND a.status IN ('pending', 'confirmed')
              ORDER BY a.start_at ASC"
         );
@@ -541,7 +541,7 @@ function proVoiceCancelAppointment(string $slug, string $confirmationCode): arra
                 c.first_name, c.last_name
          FROM professional_appointments a
          INNER JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.restaurant_id = ? AND a.confirmation_code = ?
+         WHERE a.company_id = ? AND a.confirmation_code = ?
          LIMIT 1"
     );
     $stmt->execute([$restaurantId, strtoupper(trim($confirmationCode))]);
@@ -619,7 +619,7 @@ function proVoiceConfirmAppointment(string $slug, string $confirmationCode): arr
                 c.first_name, c.last_name
          FROM professional_appointments a
          INNER JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.restaurant_id = ? AND a.confirmation_code = ?
+         WHERE a.company_id = ? AND a.confirmation_code = ?
          LIMIT 1"
     );
     $stmt->execute([$restaurantId, strtoupper(trim($confirmationCode))]);
@@ -692,7 +692,7 @@ function proVoiceModifyAppointment(
         "SELECT a.*, c.first_name, c.last_name, c.phone AS client_phone, c.email AS client_email
          FROM professional_appointments a
          INNER JOIN professional_clients c ON c.id = a.client_id
-         WHERE a.restaurant_id = ? AND a.confirmation_code = ?
+         WHERE a.company_id = ? AND a.confirmation_code = ?
          LIMIT 1"
     );
     $stmt->execute([$restaurantId, strtoupper(trim($confirmationCode))]);
@@ -745,7 +745,7 @@ function proVoiceModifyAppointment(
     $clientId = (int)$existing['client_id'];
     $stmt = $pdo->prepare(
         "UPDATE professional_clients SET first_name = ?, last_name = ?, email = ?, phone = ?, updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
     $stmt->execute([$firstName, $lastName, $clientEmail ?: null, trim($clientPhone), $clientId, $restaurantId]);
 
@@ -803,7 +803,7 @@ function proVoiceModifyAppointment(
             cancelled_at = NULL,
             completed_at = NULL,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
     $stmt->execute([
         $professionalUserId,
@@ -836,7 +836,7 @@ function proVoiceModifyAppointment(
 
     // Update client's last_appointment_at
     try {
-        $stmt = $pdo->prepare("UPDATE professional_clients SET last_appointment_at = ? WHERE id = ? AND restaurant_id = ?");
+        $stmt = $pdo->prepare("UPDATE professional_clients SET last_appointment_at = ? WHERE id = ? AND company_id = ?");
         $stmt->execute([$slot['start_at'], $clientId, $restaurantId]);
     } catch (Throwable $e) {}
 
@@ -892,7 +892,7 @@ function proVoiceUpdateClientPreferences(string $slug, string $clientPhone, arra
     $stmt = $pdo->prepare(
         "SELECT id, first_name, last_name, marketing_opt_in, preferred_contact_method
          FROM professional_clients
-         WHERE restaurant_id = ? AND phone = ?
+         WHERE company_id = ? AND phone = ?
          LIMIT 1"
     );
     $stmt->execute([$restaurantId, trim($clientPhone)]);
@@ -930,7 +930,7 @@ function proVoiceUpdateClientPreferences(string $slug, string $clientPhone, arra
     $updates[] = "updated_at = NOW()";
     $params[] = $client['id'];
     $params[] = $restaurantId;
-    $stmt = $pdo->prepare("UPDATE professional_clients SET " . implode(', ', $updates) . " WHERE id = ? AND restaurant_id = ?");
+    $stmt = $pdo->prepare("UPDATE professional_clients SET " . implode(', ', $updates) . " WHERE id = ? AND company_id = ?");
     $stmt->execute($params);
 
     $clientName = trim($client['first_name'] . ' ' . $client['last_name']);

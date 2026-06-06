@@ -4,11 +4,11 @@ require_once '../helpers/db.php';
 
 requireAuth();
 $user = get_user();
-$businessName = $_SESSION['current_restaurant_name'] ?? 'My Business';
+$businessName = $_SESSION['current_company_name'] ?? 'My Business';
 $currentRole = $_SESSION['current_role'] ?? '';
 $businessPhone = '';
-if (!empty($_SESSION['current_restaurant_id'])) {
-    $r = getRestaurant($_SESSION['current_restaurant_id']);
+if (!empty($_SESSION['current_company_id'])) {
+    $r = getCompany($_SESSION['current_company_id']);
     if ($r && !empty($r['phone'])) {
         $digits = preg_replace('/\D/', '', $r['phone']);
         if (strlen($digits) === 10) {
@@ -21,13 +21,13 @@ if (!empty($_SESSION['current_restaurant_id'])) {
     }
 }
 // Header title shows the Display Name from Professional Settings
-// (professional_profiles.display_name). Fallback avoids the restaurants
+// (professional_profiles.display_name). Fallback avoids the companies
 // table — the template should lean on it as little as possible.
 $headerDisplayName = 'Company Not Setup';
-if (!empty($_SESSION['current_restaurant_id'])) {
+if (!empty($_SESSION['current_company_id'])) {
     try {
-        $dnStmt = db()->prepare("SELECT display_name FROM professional_profiles WHERE restaurant_id = ?");
-        $dnStmt->execute([$_SESSION['current_restaurant_id']]);
+        $dnStmt = db()->prepare("SELECT display_name FROM professional_profiles WHERE company_id = ?");
+        $dnStmt->execute([$_SESSION['current_company_id']]);
         $dn = $dnStmt->fetchColumn();
         if ($dn !== false && trim((string)$dn) !== '') {
             $headerDisplayName = $dn;
@@ -36,7 +36,7 @@ if (!empty($_SESSION['current_restaurant_id'])) {
         error_log('Header display name lookup failed: ' . $e->getMessage());
     }
 }
-$businesses = getUserRestaurants($user['id']);
+$businesses = getUserCompanies($user['id']);
 $hasMultipleBusinesses = count($businesses) > 1;
 
 // Unified template shell: every user gets the same screen and the same
@@ -329,10 +329,10 @@ $appFooterLabel = 'MaluDB Design Template';
                     </a>
                     <div class="dropdown-menu dropdown-menu-end shadow-lg" style="min-width: 20rem;" id="business-switcher-menu">
                       <?php foreach ($businesses as $r): ?>
-                      <a class="dropdown-item d-flex align-items-center <?php echo ($r['id'] == ($_SESSION['current_restaurant_id'] ?? 0)) ? 'active' : ''; ?>"
+                      <a class="dropdown-item d-flex align-items-center <?php echo ($r['id'] == ($_SESSION['current_company_id'] ?? 0)) ? 'active' : ''; ?>"
                          href="#"
-                         hx-post="/partials/auth/switch-restaurant.php"
-                         hx-vals='{"restaurant_id": <?php echo (int)$r['id']; ?>}'
+                         hx-post="/partials/auth/switch-company.php"
+                         hx-vals='{"company_id": <?php echo (int)$r['id']; ?>}'
                          hx-target="#page-content"
                          id="business-switch-<?php echo (int)$r['id']; ?>">
                         <i class="feather-home fs-5 me-2"></i>
@@ -451,8 +451,8 @@ $appFooterLabel = 'MaluDB Design Template';
         }
       });
 
-      // Handle restaurant switch — reload page to refresh sidebar permissions
-      document.body.addEventListener('restaurantSwitched', function() {
+      // Handle company switch — reload page to refresh sidebar permissions
+      document.body.addEventListener('companySwitched', function() {
         window.location.reload();
       });
 

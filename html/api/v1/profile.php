@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /api/v1/profile.php — Professional profile for the authenticated user's restaurant
+ * GET /api/v1/profile.php — Professional profile for the authenticated user's company
  */
 
 require_once __DIR__ . '/_bootstrap.php';
@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 api_require_method('GET');
 $auth = api_authenticate();
 
-$profile = getProfessionalProfile($auth['restaurant_id']);
+$profile = getProfessionalProfile($auth['company_id']);
 
 if (!$profile) {
     api_error('Professional profile not configured.', 'NOT_FOUND', 404);

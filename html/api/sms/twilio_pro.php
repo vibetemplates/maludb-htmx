@@ -11,7 +11,7 @@
  */
 
 require_once __DIR__ . '/../../../helpers/db.php';
-require_once __DIR__ . '/../../../helpers/restaurant.php';
+require_once __DIR__ . '/../../../helpers/company.php';
 
 // --- Logging ---
 define('SMS_PRO_LOG', __DIR__ . '/../../../logs/pro-webhook.log');
@@ -51,7 +51,7 @@ $toDigits10 = strlen($toDigits) > 10 ? substr($toDigits, -10) : $toDigits;
 $rpnStmt = $pdo->prepare(
     "SELECT rpn.id as phone_number_id, rpn.restaurant_id, rpn.phone_number, r.name as restaurant_name
      FROM restaurant_phone_numbers rpn
-     JOIN restaurants r ON rpn.restaurant_id = r.id
+     JOIN companies r ON rpn.restaurant_id = r.id
      WHERE rpn.is_active = 1
      ORDER BY rpn.id"
 );
@@ -81,7 +81,7 @@ $fromDigits = normalizePhone($fromNumber);
 $fromDigits10 = strlen($fromDigits) > 10 ? substr($fromDigits, -10) : $fromDigits;
 
 $clientStmt = $pdo->prepare(
-    "SELECT id, phone FROM professional_clients WHERE restaurant_id = ? AND phone IS NOT NULL AND phone != ''"
+    "SELECT id, phone FROM professional_clients WHERE company_id = ? AND phone IS NOT NULL AND phone != ''"
 );
 $clientStmt->execute([$restaurantId]);
 

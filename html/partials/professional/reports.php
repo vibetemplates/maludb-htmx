@@ -5,17 +5,17 @@ require_once __DIR__ . '/../../../helpers/professional-availability.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-reports-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-reports-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
-$professionalProfile = getProfessionalProfile($restaurantId);
+$professionalProfile = getProfessionalProfile($companyId);
 $businessName = trim((string)($professionalProfile['business_name'] ?? ''));
 if ($businessName === '') {
-    $businessName = $_SESSION['current_restaurant_name'] ?? 'Professional Business';
+    $businessName = $_SESSION['current_company_name'] ?? 'Professional Business';
 }
 
 $today = date('Y-m-d');

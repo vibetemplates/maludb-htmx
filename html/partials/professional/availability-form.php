@@ -5,19 +5,19 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $availabilityId = (int)($_GET['availability_id'] ?? 0);
 $availability = null;
 $isEdit = false;
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-availability-form-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-availability-form-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
 if ($availabilityId > 0) {
-    $stmt = db()->prepare("SELECT * FROM professional_availability_rules WHERE id = ? AND restaurant_id = ?");
-    $stmt->execute([$availabilityId, $restaurantId]);
+    $stmt = db()->prepare("SELECT * FROM professional_availability_rules WHERE id = ? AND company_id = ?");
+    $stmt->execute([$availabilityId, $companyId]);
     $availability = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$availability) {

@@ -5,13 +5,13 @@ require_once '../../../helpers/csrf.php';
 requireAuth();
 requireAdmin();
 
-$restaurantId = currentRestaurantId();
-$stmt = db()->prepare("SELECT * FROM restaurants WHERE id = ?");
-$stmt->execute([$restaurantId]);
-$restaurant = $stmt->fetch();
+$companyId = currentCompanyId();
+$stmt = db()->prepare("SELECT * FROM companies WHERE id = ?");
+$stmt->execute([$companyId]);
+$company = $stmt->fetch();
 
-if (!$restaurant) {
-    echo '<div class="alert alert-danger" id="profile-error-notfound">Restaurant not found.</div>';
+if (!$company) {
+    echo '<div class="alert alert-danger" id="profile-error-notfound">Company not found.</div>';
     exit;
 }
 
@@ -46,20 +46,20 @@ $timezones = [
                           hx-swap="innerHTML">
                         <?php echo csrf_field(); ?>
 
-                        <!-- Restaurant Name -->
+                        <!-- Company Name -->
                         <div class="mb-3" id="profile-name-group">
-                            <label for="profile-name" class="form-label">Restaurant Name <span class="text-danger">*</span></label>
+                            <label for="profile-name" class="form-label">Company Name <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="profile-name" name="name"
-                                   value="<?php echo htmlspecialchars($restaurant['name']); ?>" required>
+                                   value="<?php echo htmlspecialchars($company['name']); ?>" required>
                         </div>
 
                         <!-- Slug (read-only) -->
                         <div class="mb-3" id="profile-slug-group">
                             <label for="profile-slug" class="form-label">Slug (URL identifier)</label>
                             <input type="text" class="form-control" id="profile-slug" name="slug"
-                                   value="<?php echo htmlspecialchars($restaurant['slug']); ?>" readonly
+                                   value="<?php echo htmlspecialchars($company['slug']); ?>" readonly
                                    style="background-color: #f8f9fa;">
-                            <div class="form-text" id="profile-slug-help">Public booking URL: /booking/?restaurant=<?php echo htmlspecialchars($restaurant['slug']); ?></div>
+                            <div class="form-text" id="profile-slug-help">Unique URL identifier for this company</div>
                         </div>
 
                         <div class="row" id="profile-contact-row">
@@ -67,14 +67,14 @@ $timezones = [
                             <div class="col-md-6 mb-3" id="profile-phone-group">
                                 <label for="profile-phone" class="form-label">Phone Number</label>
                                 <input type="tel" class="form-control" id="profile-phone" name="phone"
-                                       value="<?php echo htmlspecialchars($restaurant['phone'] ?? ''); ?>">
+                                       value="<?php echo htmlspecialchars($company['phone'] ?? ''); ?>">
                             </div>
 
                             <!-- Email -->
                             <div class="col-md-6 mb-3" id="profile-email-group">
                                 <label for="profile-email" class="form-label">Email Address</label>
                                 <input type="email" class="form-control" id="profile-email" name="email"
-                                       value="<?php echo htmlspecialchars($restaurant['email'] ?? ''); ?>">
+                                       value="<?php echo htmlspecialchars($company['email'] ?? ''); ?>">
                             </div>
                         </div>
 
@@ -82,24 +82,24 @@ $timezones = [
                         <div class="mb-3" id="profile-address1-group">
                             <label for="profile-address1" class="form-label">Street Address</label>
                             <input type="text" class="form-control" id="profile-address1" name="address_line1"
-                                   value="<?php echo htmlspecialchars($restaurant['address_line1'] ?? ''); ?>">
+                                   value="<?php echo htmlspecialchars($company['address_line1'] ?? ''); ?>">
                         </div>
 
                         <div class="row" id="profile-city-state-row">
                             <div class="col-md-5 mb-3" id="profile-city-group">
                                 <label for="profile-city" class="form-label">City</label>
                                 <input type="text" class="form-control" id="profile-city" name="city"
-                                       value="<?php echo htmlspecialchars($restaurant['city'] ?? ''); ?>">
+                                       value="<?php echo htmlspecialchars($company['city'] ?? ''); ?>">
                             </div>
                             <div class="col-md-3 mb-3" id="profile-state-group">
                                 <label for="profile-state" class="form-label">State</label>
                                 <input type="text" class="form-control" id="profile-state" name="state"
-                                       value="<?php echo htmlspecialchars($restaurant['state'] ?? ''); ?>" maxlength="50">
+                                       value="<?php echo htmlspecialchars($company['state'] ?? ''); ?>" maxlength="50">
                             </div>
                             <div class="col-md-4 mb-3" id="profile-zip-group">
                                 <label for="profile-zip" class="form-label">ZIP Code</label>
                                 <input type="text" class="form-control" id="profile-zip" name="postal_code"
-                                       value="<?php echo htmlspecialchars($restaurant['postal_code'] ?? ''); ?>" maxlength="20">
+                                       value="<?php echo htmlspecialchars($company['postal_code'] ?? ''); ?>" maxlength="20">
                             </div>
                         </div>
 
@@ -107,7 +107,7 @@ $timezones = [
                         <div class="mb-3" id="profile-website-group">
                             <label for="profile-website" class="form-label">Website URL</label>
                             <input type="url" class="form-control" id="profile-website" name="website"
-                                   value="<?php echo htmlspecialchars($restaurant['website'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($company['website'] ?? ''); ?>"
                                    placeholder="https://">
                         </div>
 
@@ -117,7 +117,7 @@ $timezones = [
                             <select class="form-select" id="profile-timezone" name="timezone" required>
                                 <?php foreach ($timezones as $tz => $label): ?>
                                 <option value="<?php echo htmlspecialchars($tz); ?>"
-                                    <?php echo ($restaurant['timezone'] === $tz) ? 'selected' : ''; ?>>
+                                    <?php echo ($company['timezone'] === $tz) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($label); ?>
                                 </option>
                                 <?php endforeach; ?>

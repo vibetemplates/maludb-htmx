@@ -7,14 +7,14 @@ require_once __DIR__ . '/_bootstrap.php';
 
 api_require_method('GET');
 $auth = api_authenticate();
-$rid  = $auth['restaurant_id'];
+$rid  = $auth['company_id'];
 
 $dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 $pdo = db();
 $stmt = $pdo->prepare(
     "SELECT * FROM professional_availability_rules
-     WHERE restaurant_id = ? AND is_active = 1
+     WHERE company_id = ? AND is_active = 1
      ORDER BY weekday ASC, start_time ASC"
 );
 $stmt->execute([$rid]);

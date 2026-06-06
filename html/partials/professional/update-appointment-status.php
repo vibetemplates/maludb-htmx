@@ -19,11 +19,11 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $appointmentId = (int)($_POST['appointment_id'] ?? 0);
 $newStatus = trim($_POST['new_status'] ?? '');
 
-if (!$restaurantId || $appointmentId <= 0) {
+if (!$companyId || $appointmentId <= 0) {
     echo '<div class="alert alert-danger" id="professional-update-appointment-status-invalid">Invalid request.</div>';
     exit;
 }
@@ -37,8 +37,8 @@ $allowedTransitions = [
 ];
 
 $pdo = db();
-$appointmentStmt = $pdo->prepare("SELECT * FROM professional_appointments WHERE id = ? AND restaurant_id = ? LIMIT 1");
-$appointmentStmt->execute([$appointmentId, $restaurantId]);
+$appointmentStmt = $pdo->prepare("SELECT * FROM professional_appointments WHERE id = ? AND company_id = ? LIMIT 1");
+$appointmentStmt->execute([$appointmentId, $companyId]);
 $appointment = $appointmentStmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$appointment) {
@@ -71,14 +71,14 @@ try {
             cancelled_at = ?,
             completed_at = ?,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
     $updateStmt->execute([
         $newStatus,
         $cancelledAt,
         $completedAt,
         $appointmentId,
-        $restaurantId,
+        $companyId,
     ]);
 
     if ($newStatus === 'completed') {
@@ -89,13 +89,13 @@ try {
                     ELSE last_appointment_at
                 END,
                 updated_at = NOW()
-             WHERE id = ? AND restaurant_id = ?"
+             WHERE id = ? AND company_id = ?"
         );
         $clientStmt->execute([
             $appointment['start_at'],
             $appointment['start_at'],
             (int)$appointment['client_id'],
-            $restaurantId,
+            $companyId,
         ]);
     }
 
@@ -110,7 +110,7 @@ try {
 }
 
 professionalLogAppointmentActivity(
-    $restaurantId,
+    $companyId,
     currentUserId(),
     $appointmentId,
     'status_change',

@@ -17,11 +17,11 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
+if (!$companyId) {
     http_response_code(400);
-    echo '<div class="alert alert-danger" id="professional-save-service-no-restaurant">No professional account is currently selected.</div>';
+    echo '<div class="alert alert-danger" id="professional-save-service-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
@@ -83,8 +83,8 @@ if ($priceInput !== '') {
 
 $pdo = db();
 
-$duplicateQuery = "SELECT id FROM professional_services WHERE restaurant_id = ? AND name = ?";
-$duplicateParams = [$restaurantId, $name];
+$duplicateQuery = "SELECT id FROM professional_services WHERE company_id = ? AND name = ?";
+$duplicateParams = [$companyId, $name];
 if ($isEdit) {
     $duplicateQuery .= " AND id != ?";
     $duplicateParams[] = $serviceId;
@@ -97,8 +97,8 @@ if ($duplicateStmt->fetch()) {
 }
 
 if ($isEdit) {
-    $checkStmt = $pdo->prepare("SELECT id FROM professional_services WHERE id = ? AND restaurant_id = ?");
-    $checkStmt->execute([$serviceId, $restaurantId]);
+    $checkStmt = $pdo->prepare("SELECT id FROM professional_services WHERE id = ? AND company_id = ?");
+    $checkStmt->execute([$serviceId, $companyId]);
     if (!$checkStmt->fetch()) {
         echo '<div class="alert alert-danger" id="professional-save-service-not-found">Service not found.</div>';
         exit;
@@ -120,7 +120,7 @@ if ($isEdit) {
             is_active = ?,
             is_public_bookable = ?,
             updated_at = NOW()
-         WHERE id = ? AND restaurant_id = ?"
+         WHERE id = ? AND company_id = ?"
     );
 
     $stmt->execute([
@@ -137,12 +137,12 @@ if ($isEdit) {
         $isActive,
         $isPublicBookable,
         $serviceId,
-        $restaurantId,
+        $companyId,
     ]);
 } else {
     $stmt = $pdo->prepare(
         "INSERT INTO professional_services (
-            restaurant_id,
+            company_id,
             name,
             description,
             duration_minutes,
@@ -162,7 +162,7 @@ if ($isEdit) {
     );
 
     $stmt->execute([
-        $restaurantId,
+        $companyId,
         $name,
         $description ?: null,
         $durationMinutes,

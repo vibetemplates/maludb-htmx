@@ -434,7 +434,7 @@ if (!function_exists('proMcpListTodos')) {
         $ctx = proMcpResolveTodoContext($slug);
         if (!$ctx['success']) return $ctx;
 
-        $where = ['restaurant_id = ?', 'user_id = ?'];
+        $where = ['company_id = ?', 'user_id = ?'];
         $params = [$ctx['restaurant_id'], $ctx['user_id']];
 
         $status = $args['status'] ?? '';
@@ -470,7 +470,7 @@ if (!function_exists('proMcpCreateTodo')) {
         $priority = in_array($args['priority'] ?? '', ['low', 'medium', 'high']) ? $args['priority'] : 'medium';
 
         $pdo = db();
-        $stmt = $pdo->prepare("INSERT INTO todos (restaurant_id, user_id, title, description, due_date, priority) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO todos (company_id, user_id, title, description, due_date, priority) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$ctx['restaurant_id'], $ctx['user_id'], $title, $description, $dueDate, $priority]);
 
         $newId = (int)$pdo->lastInsertId();
@@ -491,7 +491,7 @@ if (!function_exists('proMcpUpdateTodo')) {
         $todoId = (int)($args['todo_id'] ?? 0);
         $pdo = db();
 
-        $existing = $pdo->prepare("SELECT * FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
+        $existing = $pdo->prepare("SELECT * FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
         $existing->execute([$todoId, $ctx['restaurant_id'], $ctx['user_id']]);
         $todo = $existing->fetch(PDO::FETCH_ASSOC);
 
@@ -533,7 +533,7 @@ if (!function_exists('proMcpCompleteTodo')) {
         $todoId = (int)($args['todo_id'] ?? 0);
         $pdo = db();
 
-        $existing = $pdo->prepare("SELECT id, title, status FROM todos WHERE id = ? AND restaurant_id = ? AND user_id = ?");
+        $existing = $pdo->prepare("SELECT id, title, status FROM todos WHERE id = ? AND company_id = ? AND user_id = ?");
         $existing->execute([$todoId, $ctx['restaurant_id'], $ctx['user_id']]);
         $todo = $existing->fetch(PDO::FETCH_ASSOC);
 

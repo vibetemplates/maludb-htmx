@@ -36,7 +36,7 @@ Key findings:
 3. **Keep**: Professional module screens (appointments, clients, services, availability, time off). ✔
 4. **Unified screen**: every user gets the same screen regardless of role, product_type, location type, or settings — remove role/product-type branching from the UI. ✔
 5. **Database**: PostgreSQL 17 + MaluDB extensions (per README). ✔
-6. **Deferred**: AI integrations (Retell/Twilio/OpenAI/MCP) keep-vs-remove; tenant table renaming (`restaurants` → ?).
+6. **Deferred**: AI integrations (Retell/Twilio/OpenAI/MCP) keep-vs-remove. ~~Tenant table renaming~~ DONE 2026-06-06: `restaurants` → `companies` via COPY (see "Plan — 2026-06-06 (Tenant rename)" section below).
 
 ## Todo Items
 
@@ -66,7 +66,7 @@ Key findings:
 ### Phase 4 — Genericize what remains
 - [x] De-brand `app.php`, `login.php`, `register.php` (MaluDB text brand) — `privacy.php`, `terms.php`, landing page still pending
 - [x] Clean `app.php` navigation to one unified menu for all users; new generic dashboard showcase at `partials/dashboard/index.php`
-- [ ] Tenant naming refactor (pending decision #2)
+- [x] Tenant naming refactor — done 2026-06-06 (restaurants → companies COPY; see rename plan section below)
 - [ ] Verify every kept page loads without removed dependencies
 - [ ] Ensure all div tags in kept HTML files have unique ids (CLAUDE.md rule 11)
 
@@ -295,3 +295,148 @@ Code fixes required for a clean fresh install:
 Verified: install.sql executed twice into a scratch schema (14 tables, idempotent);
 registration-flow inserts, the ON CONFLICT upsert, and client token/prompt inserts all
 exercised against the fresh schema, then rolled back and schema dropped.
+
+---
+
+# Plan — 2026-06-06 (Tenant rename: restaurants → companies, COPY not rename)
+
+Resolves deferred decision #6 of the template-conversion plan.
+
+## Decisions confirmed with Ed
+- Generic tenant name: **companies** / **user_companies** (matches the existing
+  "Company Not Setup" header fallback). Session key: `current_company_id`.
+- **Do NOT rename/alter/drop the existing `restaurants` and `user_restaurants`
+  tables** — another application uses them. Create copies instead; this app
+  points at the copies. After the copy, the two table sets diverge by design.
+- Full rename in app code (tables, columns, session keys, helpers, file names,
+  UI labels).
+
+## Scope rule
+Only **live template code** gets renamed. Orphaned domain modules already slated
+for deletion in Phase 3 of the template-conversion plan (platform/*, billing/*,
+affiliates, retell/sms/email agents, zozocal landing, prospect helpers,
+restaurant voice helpers) are NOT renamed — they keep their old references until
+they are deleted. The final grep sweep excludes them.
+
+## Open questions (verify before starting)
+1. The 9 dependent template tables in install.sql carry a `restaurant_id` column
+   FK'd to restaurants(id): settings, professional_profiles, professional_services,
+   professional_availability_rules, professional_time_off, professional_clients,
+   professional_appointments, todos, api_tokens.
+   **Does the other application read/write any of these in the live DB?**
+   - If NO (assumed): rename column to `company_id` + repoint FK to companies(id)
+     in the live DB.
+   - If YES for some: those keep `restaurant_id` in the live DB; only fresh
+     installs get `company_id`.
+2. `client_token` / `client_model_prompt` have no tenant column — unaffected. ✔
+
+## Todo
+
+### Phase 1 — Database (live DB + install.sql)
+- [x] 1. `docs/sql/companies.sql`: Postgres script that
+      (a) `CREATE TABLE companies (LIKE restaurants INCLUDING ALL)` + copy data
+          (+ sequence sync),
+      (b) `CREATE TABLE user_companies` (same shape as user_restaurants but
+          column `company_id` FK→companies) + copy data,
+      (c) per open question #1: on the 9 dependent tables, RENAME COLUMN
+          restaurant_id → company_id, drop FK to restaurants, add FK to companies,
+          rename affected indexes/constraints.
+      Old tables untouched. Run against live DB.
+- [x] 2. `docs/sql/install.sql`: replace restaurants/user_restaurants CREATEs with
+      companies/user_companies; restaurant_id → company_id in all 9 dependent
+      tables, FKs, uniques, indexes; update header comments. Re-verify in a
+      scratch schema (idempotent, twice).
+
+### Phase 2 — Core helpers & session
+- [x] 3. `helpers/restaurant.php` → `helpers/company.php`: getCurrentCompanyId(),
+      setCurrentCompany(), getCompany(), getUserCompanies(), getUserCompanyRole();
+      queries against companies/user_companies. Update all `require` sites.
+- [x] 4. `helpers/auth.php`: session key `current_restaurant_id` → `current_company_id`;
+      switchRestaurant() → switchCompany(); queries to new tables; update comments.
+
+### Phase 3 — App shell & auth flows
+- [x] 5. `html/app.php`: company switcher (getRestaurant→getCompany calls, session
+      key, hx-vals `company_id`, "restaurant" labels → "company").
+- [x] 6. `partials/auth/switch-restaurant.php` → `switch-company.php` (+ the hx-post
+      URL in app.php).
+- [x] 7. `partials/auth/register.php`, `google-complete.php`, `forgot-password.php`:
+      INSERT/SELECT against companies/user_companies; variable renames.
+
+### Phase 4 — API (html/api/v1/)
+- [x] 8. `_bootstrap.php`: join user_companies; auth array keys company_id/company_role
+      (api_tokens column per open question #1).
+- [x] 9. `auth.php`: token issue from user_companies; login response field company_id.
+- [x] 10. Endpoint sweep: appointments, availability, availability-rules, calendar,
+      clients, profile, services, time-off, todos — `restaurant_id` → `company_id`
+      in SQL + variables.
+
+### Phase 5 — Kept modules (settings, professional, todos, dashboard, pro-booking)
+- [x] 11. `partials/settings/`: profile.php, save-profile.php, users.php, save-user.php,
+      toggle-user.php, user-form.php, notifications.php (incl. its ON CONFLICT
+      (restaurant_id,...) target), token-setup.php if touched.
+- [x] 12. `partials/professional/` (all files) + helpers it uses:
+      professional-availability.php, professional-booking.php,
+      professional-notifications.php, send-professional-reminders.php.
+- [x] 13. `partials/todos/` + `partials/dashboard/index.php`.
+- [x] 14. `html/pro-booking/` (public booking pages for the kept module).
+
+### Phase 6 — Verify & wrap up
+- [x] 15. Grep sweep over live code (excluding design/, orphaned modules listed in
+      the scope rule, and historical SQL): zero remaining
+      restaurants|user_restaurants|restaurant_id|current_restaurant_id.
+- [x] 16. `php -l` all touched files. Smoke-test live: login, company switcher,
+      register, settings→profile/users, professional dashboard/calendar, todos,
+      API token auth.
+- [x] 17. docs/activity.md, commit & push.
+
+## Explicitly NOT touched
+- `restaurants` / `user_restaurants` tables in the live DB (other application)
+- `design/` folder
+- Orphaned domain modules pending Phase-3 deletion (see scope rule)
+
+## Review
+
+**Database (docs/sql/companies.sql — executed against live PostgreSQL):**
+- `companies` (21 rows) and `user_companies` (13 rows) created as faithful copies of
+  restaurants/user_restaurants — same ids, sequences synced. Old tables untouched
+  (verified post-migration: 21/13 rows intact).
+- `restaurant_id` → `company_id` renamed + FKs repointed to companies(id) on the 9
+  template tables (settings, professional_profiles/services/availability_rules/
+  time_off/clients/appointments, todos, api_tokens). Index/constraint names renamed
+  to match. Legacy tables (reservations, guests, restaurant_prompts, invoices,
+  activity_log, ...) keep their restaurant_id FKs to restaurants.
+- install.sql fully genericized (companies/user_companies/company_id); re-verified by
+  running it twice into a scratch schema (15 tables, idempotent), then dropped.
+
+**Code (~75 files changed; php -l clean across all of them):**
+- `helpers/restaurant.php` → `helpers/company.php`: getCompanyId/setCompanyId/
+  getCompany/getCompanyBySlug/getUserCompanies/getUserRole/applyCompanyTimezone/
+  getCompanySetting (new). Deprecated alias block (getRestaurant, getUserRestaurants,
+  getRestaurantSetting in availability.php, switchRestaurant + currentRestaurantId in
+  auth.php, ...) keeps the orphaned legacy modules limping until their Phase-3 deletion.
+- Session keys: current_restaurant_id/name → current_company_id/name (auth.php,
+  app.php, save-profile.php, all kept partials).
+- app.php company switcher → switch-company.php with company_id hx-vals; registration
+  forms post company_name; register/google-complete/forgot-password write
+  companies/user_companies.
+- api/v1: token auth joins user_companies; auth/context/response keys company_id +
+  company_role; all 11 endpoint files swept.
+- Kept modules swept: settings (profile/users/notifications/save-user/toggle-user/
+  user-form), professional (all 26 partials + 4 helpers), todos, dashboard, pro-booking.
+- Deferred AI-integration files (retell/sms/mcp webhooks, professional-voice-api,
+  retell-auth, meal-status, retell-agent-import) got surgical SQL-only fixes so they
+  run against the renamed tables; their legacy-table queries left untouched.
+
+**Verified live:** login_user (company_id=3 set), getUserCompanies, getCompany,
+getCompanySetting + deprecated alias, switchCompany, todos/settings/users/professional/
+api-token queries, header display-name lookup, and the full registration-flow insert
+chain incl. the ON CONFLICT (company_id, setting_key) upsert (transaction rolled back).
+
+**Notes:**
+- The two table sets diverge from now on: the other app writes restaurants/
+  user_restaurants; this app reads/writes only companies/user_companies.
+- The registration Business Type select still offers restaurant/professional/affiliate
+  location_type values — domain leftover for the template-conversion plan (unified-
+  screen decision #4), not part of this rename.
+- profile.php's stale "/booking/?restaurant=slug" help text replaced with a neutral
+  description (the /booking module was deleted earlier).

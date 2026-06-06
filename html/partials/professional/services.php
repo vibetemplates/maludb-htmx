@@ -5,20 +5,20 @@ require_once __DIR__ . '/../../../helpers/csrf.php';
 requireAuth();
 requireManager();
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 
-if (!$restaurantId) {
-    echo '<div class="alert alert-danger" id="professional-services-no-restaurant">No professional account is currently selected.</div>';
+if (!$companyId) {
+    echo '<div class="alert alert-danger" id="professional-services-no-company">No professional account is currently selected.</div>';
     exit;
 }
 
 $stmt = db()->prepare(
     "SELECT *
      FROM professional_services
-     WHERE restaurant_id = ?
+     WHERE company_id = ?
      ORDER BY sort_order ASC, name ASC"
 );
-$stmt->execute([$restaurantId]);
+$stmt->execute([$companyId]);
 $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="main-content" id="professional-services-main"

@@ -17,10 +17,10 @@ if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-$restaurantId = currentRestaurantId();
+$companyId = currentCompanyId();
 $availabilityId = (int)($_POST['availability_id'] ?? 0);
 
-if (!$restaurantId || !$availabilityId) {
+if (!$companyId || !$availabilityId) {
     http_response_code(400);
     echo '<div class="alert alert-danger" id="professional-toggle-availability-invalid">Invalid request.</div>';
     exit;
@@ -30,9 +30,9 @@ $pdo = db();
 $stmt = $pdo->prepare(
     "SELECT id, weekday, start_time, end_time, is_active
      FROM professional_availability_rules
-     WHERE id = ? AND restaurant_id = ?"
+     WHERE id = ? AND company_id = ?"
 );
-$stmt->execute([$availabilityId, $restaurantId]);
+$stmt->execute([$availabilityId, $companyId]);
 $rule = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$rule) {
@@ -46,14 +46,14 @@ if ($newStatus === 1) {
     $overlapStmt = $pdo->prepare(
         "SELECT id
          FROM professional_availability_rules
-         WHERE restaurant_id = ?
+         WHERE company_id = ?
            AND weekday = ?
            AND is_active = 1
            AND id != ?
            AND NOT (end_time <= ? OR start_time >= ?)"
     );
     $overlapStmt->execute([
-        $restaurantId,
+        $companyId,
         (int)$rule['weekday'],
         $availabilityId,
         $rule['start_time'],
@@ -65,8 +65,8 @@ if ($newStatus === 1) {
     }
 }
 
-$updateStmt = $pdo->prepare("UPDATE professional_availability_rules SET is_active = ?, updated_at = NOW() WHERE id = ? AND restaurant_id = ?");
-$updateStmt->execute([$newStatus, $availabilityId, $restaurantId]);
+$updateStmt = $pdo->prepare("UPDATE professional_availability_rules SET is_active = ?, updated_at = NOW() WHERE id = ? AND company_id = ?");
+$updateStmt->execute([$newStatus, $availabilityId, $companyId]);
 
 header('HX-Trigger: refreshProfessionalAvailabilityList');
 
