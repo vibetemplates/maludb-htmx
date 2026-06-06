@@ -3380,3 +3380,20 @@ error. Title tag and business switcher still use `$businessName`.
 **Change:** `html/app.php` — `$headerDisplayName` now initializes to 'Company Not Setup' instead
 of `$businessName` (session restaurant name), so the header only shows a real name when
 `professional_profiles.display_name` is set.
+
+## 2026-06-06 — Fix: modal saves didn't refresh the list until manual reload
+
+**Prompt:** "When I added a token the page did not display it until i refreshed the page."
+
+**Root cause:** htmx 2.0.8 processes the `HX-Trigger` header BEFORE performing the swap. Our
+`closeModal` listener in app.php synchronously empties `#modal-container`, detaching the form
+that issued the request. htmx then resolves `HX-Retarget: #page-content` relative to the
+now-detached element — `getRootNode(elt)` is no longer `document`, the selector matches nothing,
+and `resolveRetarget` throws `Invalid re-target`, aborting the swap. The INSERT succeeded, so a
+manual refresh showed the row.
+
+**Change:** `HX-Trigger: closeModal` → `HX-Trigger-After-Swap: closeModal` in all 12 partials
+that pair it with `HX-Retarget` (token-setup, model-prompts, the six memory entity pages, the
+_type-crud/_registry-crud scaffolds, attribute-templates, platform/save-affiliate). The list now
+swaps in first; the modal closes after. Files with closeModal but no HX-Retarget are unaffected
+(their swap target is resolved at request time) and were left alone.

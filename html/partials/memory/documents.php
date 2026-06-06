@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
         }
     }
 
-    header('HX-Trigger: closeModal');
+    header('HX-Trigger-After-Swap: closeModal');
     header('HX-Retarget: #page-content');
     renderDocumentsList($pdo, $selfUrl, '', $alert);
     exit;

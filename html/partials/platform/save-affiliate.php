@@ -188,5 +188,5 @@ if ($isEdit) {
 
 header('HX-Retarget: #page-content');
 header('HX-Reswap: innerHTML');
-header('HX-Trigger: closeModal');
+header('HX-Trigger-After-Swap: closeModal');
 include __DIR__ . '/affiliates.php';
