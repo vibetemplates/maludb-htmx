@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is a starter/design template for building multi-tenant web applications on a traditional LAMP stack with HTMX and Bootstrap 5, developed with Claude Code. It provides the generic infrastructure every project needs — authentication, multi-tenant accounts and roles, navigation permissions, settings, teams, dashboards, and the HTMX partial architecture — so new projects start from a working application shell instead of an empty folder.
+This repository is a design starting point for building Bootstrap 5, PHP, and HTMX applications that use the MaluDB memory database system. It provides the generic infrastructure every project needs — authentication, multi-tenant accounts and roles, navigation permissions, settings, teams, dashboards, and the HTMX partial architecture — so new projects start from a working application shell connected to MaluDB instead of an empty folder.
 
 ## Technology Stack
 

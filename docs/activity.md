@@ -3174,3 +3174,10 @@ page into the database for the url of https://zozocal.com"
 **Changes:**
 - Rewrote `README.md` from scratch as "MaluDb Design Template for Claude Code". The old SalesCoach Pro build-prompt content was removed entirely. New content: template overview, technology stack table, repository structure, getting-started steps (copy sample configs, load schema, point Apache at html/), Claude Code workflow summary, and key document links.
 - Checked off the README item in `tasks/todo.md` Phase 1.
+
+## 2026-06-06 — README Overview Update
+
+**Prompt:** "Change the Overview section to describe that the project is a design starting point for Bootstrap 5, PHP, and HTMX applications that use the MaluDB memory datatabase system."
+
+**Changes:**
+- Rewrote the README Overview to describe the project as a design starting point for Bootstrap 5, PHP, and HTMX applications using the MaluDB memory database system.
