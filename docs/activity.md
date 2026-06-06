@@ -3285,3 +3285,11 @@ page into the database for the url of https://zozocal.com"
 - All touched files pass `php -l`.
 
 **Open issue:** the `maludb_subject_type` / `maludb_verb_type` views only grant SELECT to the app user `zozocal` (INSERT test → `42501 permission denied`; episode/document views are writable). Until the view owner runs `GRANT INSERT, UPDATE, DELETE ON maludb_subject_type, maludb_verb_type TO zozocal;`, saves/deletes on those two pages will show a clean "Save failed: permission denied" alert.
+
+## 2026-06-06 — Follow-up: stacked action buttons (all memory screens)
+
+**Prompt:** "All the buttons for screens in the \"Memory Types\" section are still stacked and not side by side."
+
+**Root cause:** the Kobie theme defines `.btn-icon { display: flex; ... }` — block-level, so adjacent Edit/Delete buttons stack vertically in every table that doesn't wrap them in a flex row (people, projects, episodes, documents, subjects, verbs, attribute-templates, _scaffold.php — not just the type-CRUD screens patched earlier).
+
+**Change:** added one override to `html/assets/css/kobie-custom.css` (loads after the theme): `.table td .btn-icon { display: inline-flex; }` — fixes all list screens at once, no markup changes.

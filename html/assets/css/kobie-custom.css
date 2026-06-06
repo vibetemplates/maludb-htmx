@@ -258,3 +258,10 @@
     background: #4f46e5;
     color: #fff;
 }
+
+/* Icon buttons inside table cells: theme sets .btn-icon to display:flex
+   (block-level), which stacks adjacent action buttons vertically.
+   Render them inline so Edit/Delete sit side by side in list rows. */
+.table td .btn-icon {
+    display: inline-flex;
+}
