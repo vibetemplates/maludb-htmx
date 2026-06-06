@@ -30,7 +30,7 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Get Started - ZozoCal</title>
+    <title>Get Started - MaluDB Design Template</title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon-vt.png" />
@@ -243,7 +243,7 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
     <main class="auth-minimal-wrapper" id="register-wrapper">
         <div class="auth-minimal-inner" id="register-inner">
             <div id="register-card-wrapper">
-                <a href="/" class="register-brand" id="register-brand">ZozoCal</a>
+                <a href="/" class="register-brand" id="register-brand">MaluDB</a>
 
                 <div class="card mx-3 mx-sm-0" id="register-card">
                     <div class="card-body" id="register-card-body">
@@ -257,7 +257,7 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
                         <!-- ═══ CREATE ACCOUNT TAB ═══ -->
                         <div class="tab-panel active" id="register-panel-create">
                             <h2 style="font-size:22px;font-weight:700;color:var(--zc-dark);margin-bottom:4px;" id="register-title">Create your account</h2>
-                            <p style="font-size:14px;color:#9ca3af;margin-bottom:24px;" id="register-subtitle">Get Started with ZozoCal as an Affiliate or System Owner</p>
+                            <p style="font-size:14px;color:#9ca3af;margin-bottom:24px;" id="register-subtitle">Create your account to get started</p>
 
                             <?php if ($googleError): ?>
                                 <div class="alert alert-danger" id="register-google-error"><?php echo $googleError; ?></div>
@@ -431,7 +431,7 @@ $googleUrlInvite = google_auth_url(json_encode(['flow' => 'invite', 'csrf' => $g
 
                 <div class="register-footer-text" id="register-footer-text">
                     Already have an account? <a href="/login.php">Sign in</a>
-                    <br><a href="/" style="font-weight:400;">&#8592; Back to ZozoCal</a>
+                    <br><a href="/" style="font-weight:400;">&#8592; Back to Home</a>
                 </div>
             </div>
         </div>

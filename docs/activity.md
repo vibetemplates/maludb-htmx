@@ -3193,3 +3193,14 @@ page into the database for the url of https://zozocal.com"
   - Default landing content is the professional dashboard for all users; restaurant and affiliate nav items removed.
   - Renamed display variables restaurant→business ($businessName, $businessPhone, business switcher); removed affiliate settings dropdown item; title/meta/footer now "MaluDB Design Template".
 - Verified `php -l` clean and no references to removed variables remain.
+
+## 2026-06-06 — Status Banner Removed, Domain Modules Deleted, De-branding, Dashboard Showcase
+
+**Prompt:** "Please remove the 'This company is currently In setup.' from all pages and perform your 3 Suggested next increments" (follow-up: "In app.php you are using white text on a white background in the logo area.")
+
+**Changes:**
+- `html/app.php` — removed the business status banner and its status query entirely; sidebar brand replaced ZozoCal logo images with "MaluDB" text (text-primary after white-on-white fix); Dashboard nav + default landing now point to `/partials/dashboard/index.php`.
+- Deleted module folders (git rm): `partials/reservations`, `partials/tables`, `partials/guests`, `partials/waitlist`, `partials/sections`, `partials/prospects`, `partials/affiliate`, `partials/scoring`, `partials/sessions`, `partials/coaching-calendar`, `partials/products`, `partials/dashboard/{manager.php,rep.php,widgets/}`, and `html/booking/`. Verified no kept code references them.
+- `html/partials/dashboard/index.php` — rewritten as a generic design showcase: welcome header with action buttons, 4 stat cards, ApexCharts area chart with range buttons, recent-activity list, and a status-badge table. All divs carry unique ids.
+- `html/login.php` / `html/register.php` — de-branded: titles and brand links now "MaluDB"; affiliate wording removed from register subtitle.
+- All modified files pass `php -l`.

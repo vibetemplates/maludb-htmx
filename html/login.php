@@ -32,7 +32,7 @@ $googleUrlLogin = google_auth_url(json_encode(['flow' => 'login', 'csrf' => $goo
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login - ZozoCal</title>
+    <title>Login - MaluDB Design Template</title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon-vt.png" />
@@ -216,7 +216,7 @@ $googleUrlLogin = google_auth_url(json_encode(['flow' => 'login', 'csrf' => $goo
     <main class="auth-minimal-wrapper" id="login-wrapper">
         <div class="auth-minimal-inner" id="login-inner">
             <div class="minimal-card-wrapper" id="login-card-wrapper">
-                <a href="/" class="login-brand" id="login-brand">ZozoCal</a>
+                <a href="/" class="login-brand" id="login-brand">MaluDB</a>
 
                 <div class="card mx-3 mx-sm-0" id="login-card">
                     <div class="card-body" id="login-card-body">
@@ -301,7 +301,7 @@ $googleUrlLogin = google_auth_url(json_encode(['flow' => 'login', 'csrf' => $goo
                 </div>
 
                 <div class="login-footer-text" id="login-footer-text">
-                    <a href="/">&#8592; Back to ZozoCal</a>
+                    <a href="/">&#8592; Back to Home</a>
                 </div>
             </div>
         </div>

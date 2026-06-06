@@ -23,20 +23,9 @@ if (!empty($_SESSION['current_restaurant_id'])) {
 $businesses = getUserRestaurants($user['id']);
 $hasMultipleBusinesses = count($businesses) > 1;
 
-// Load status for current business
-$currentBusinessStatus = 'active';
-if (!empty($_SESSION['current_restaurant_id'])) {
-    $stStmt = db()->prepare("SELECT status FROM restaurants WHERE id = ?");
-    $stStmt->execute([$_SESSION['current_restaurant_id']]);
-    $stRow = $stStmt->fetch(PDO::FETCH_ASSOC);
-    if ($stRow && !empty($stRow['status'])) {
-        $currentBusinessStatus = $stRow['status'];
-    }
-}
-
 // Unified template shell: every user gets the same screen and the same
 // navigation regardless of role, product type, or settings.
-$defaultPageContentPath = '/partials/professional/dashboard.php';
+$defaultPageContentPath = '/partials/dashboard/index.php';
 $userSettingsPath = '/partials/professional/settings.php';
 $appMetaDescription = 'MaluDB Design Template';
 $appTitleSuffix = 'MaluDB Template';
@@ -91,8 +80,8 @@ $appFooterLabel = 'MaluDB Design Template';
             <!-- Logo starts -->
             <div id="kobie-logo-area" class="m-header">
               <a href="app.php" class="b-brand">
-                <img src="/assets/images/zozocal-logo.png" alt="ZozoCal" class="logo logo-lg" style="max-height: 40px;">
-                <img src="/assets/images/zozocal-logo.png" alt="ZozoCal" class="logo logo-sm" style="max-height: 24px;">
+                <span class="logo logo-lg fw-bold fs-4 text-primary" id="brand-text-lg">MaluDB</span>
+                <span class="logo logo-sm fw-bold fs-5 text-primary" id="brand-text-sm">M</span>
               </a>
             </div>
             <!-- Logo ends -->
@@ -105,7 +94,7 @@ $appFooterLabel = 'MaluDB Design Template';
                 <!-- SCHEDULING section -->
                 <li class="nxl-item nxl-caption" id="nav-caption-scheduling"><label>SCHEDULING</label></li>
                 <li class="nxl-item active current-page" id="nav-dashboard">
-                  <a href="#" class="nxl-link" hx-get="/partials/professional/dashboard.php" hx-target="#page-content">
+                  <a href="#" class="nxl-link" hx-get="/partials/dashboard/index.php" hx-target="#page-content">
                     <span class="nxl-micon"><i class="feather-home"></i></span>
                     <span class="nxl-mtext">Dashboard</span>
                   </a>
@@ -356,14 +345,6 @@ $appFooterLabel = 'MaluDB Design Template';
             </div>
           </header>
           <!-- App header ends -->
-
-          <?php if ($currentBusinessStatus !== 'active'): ?>
-          <!-- Business status banner -->
-          <div class="alert alert-warning text-center fw-bold mb-0 rounded-0 py-2" id="business-status-banner">
-              <i class="feather-alert-triangle me-2"></i>
-              This company is currently <strong><?php echo htmlspecialchars(ucfirst(str_replace('-', ' ', $currentBusinessStatus))); ?></strong>.
-          </div>
-          <?php endif; ?>
 
           <!-- App body starts -->
           <main class="nxl-content" id="page-content"
