@@ -19,3 +19,6 @@ vendor/
 # Uploads / downloads
 html/downloads/*
 !html/downloads/.gitkeep
+
+# MaluDB REST API reference copy (not deployed from this repo)
+v1/
