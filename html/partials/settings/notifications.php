@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             foreach ($settings as $key => $val) {
                 $stmt = $pdo->prepare(
                     "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                     VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                     VALUES (?, ?, ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
                 );
                 $stmt->execute([$restaurantId, $key, $val]);
             }
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $msKey = trim($_POST['mailersend_api_key'] ?? '');
             $stmt = $pdo->prepare(
                 "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                 VALUES (?, 'mailersend_api_key', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                 VALUES (?, 'mailersend_api_key', ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
             );
             $stmt->execute([$restaurantId, $msKey]);
             $message = '<div class="alert alert-success">MailerSend settings saved.</div>';
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             foreach ($smsSettings as $key => $val) {
                 $stmt = $pdo->prepare(
                     "INSERT INTO settings (restaurant_id, setting_key, setting_value)
-                     VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                     VALUES (?, ?, ?) ON CONFLICT (restaurant_id, setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = CURRENT_TIMESTAMP"
                 );
                 $stmt->execute([$restaurantId, $key, $val]);
             }

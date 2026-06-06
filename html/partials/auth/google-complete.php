@@ -85,57 +85,15 @@ try {
         "INSERT INTO user_restaurants (user_id, restaurant_id, role, is_active) VALUES (?, ?, 'admin', 1)"
     )->execute([$userId, $restaurantId]);
 
-    // 4. Create default settings
+    // 4. Create default settings (template scope only — keys the app actually reads)
     $pdo->prepare(
         "INSERT INTO settings (restaurant_id, setting_key, setting_value) VALUES
-            (?, 'time_slot_interval', '30'),
-            (?, 'default_turn_time', '90'),
-            (?, 'buffer_time', '15'),
-            (?, 'max_party_size', '12'),
-            (?, 'max_online_party_size', '8'),
-            (?, 'advance_booking_min_hours', '2'),
-            (?, 'advance_booking_max_days', '30'),
-            (?, 'same_day_cutoff_hours', '1'),
-            (?, 'max_covers_per_slot', '0'),
-            (?, 'online_table_hold_percent', '70'),
             (?, 'confirmation_email_enabled', '1'),
             (?, 'reminder_email_enabled', '1'),
             (?, 'reminder_hours_before', '24'),
             (?, 'cancellation_email_enabled', '1'),
-            (?, 'cancellation_policy', 'Please cancel at least 2 hours before your reservation time.')"
-    )->execute(array_fill(0, 15, $restaurantId));
-
-    // 5. Create default section
-    $pdo->prepare(
-        "INSERT INTO sections (restaurant_id, name, description, display_order, is_active) VALUES (?, 'Main Dining', 'Main dining area', 1, 1)"
-    )->execute([$restaurantId]);
-
-    // 6. Create default turn times
-    $pdo->prepare(
-        "INSERT INTO turn_times (restaurant_id, min_party_size, max_party_size, service_period, duration_minutes, buffer_minutes)
-         VALUES (?, 1, 4, 'all', 90, 15), (?, 5, 8, 'all', 105, 15), (?, 9, 12, 'all', 120, 15)"
-    )->execute([$restaurantId, $restaurantId, $restaurantId]);
-
-    // 7. Create affiliate record if location_type is affiliate
-    if ($locationType === 'affiliate') {
-        $affiliateCode = strtoupper(substr(md5($userId . time()), 0, 8));
-        $pdo->prepare(
-            "INSERT INTO affiliates (user_id, company_name, contact_name, contact_email, affiliate_code, status, created_at)
-             VALUES (?, ?, ?, ?, ?, 'active', NOW())"
-        )->execute([$userId, $restaurantName, $firstName . ' ' . $lastName, $email, $affiliateCode]);
-    }
-
-    // 8. Create default operating hours
-    $hoursStmt = $pdo->prepare(
-        "INSERT INTO operating_hours (restaurant_id, day_of_week, service_name, open_time, close_time, first_seating, last_seating, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
-    );
-    foreach ([2, 3, 4, 5, 6] as $day) {
-        $hoursStmt->execute([$restaurantId, $day, 'Lunch', '11:00:00', '14:30:00', '11:00:00', '14:00:00']);
-        $hoursStmt->execute([$restaurantId, $day, 'Dinner', '17:00:00', '22:00:00', '17:00:00', '21:00:00']);
-    }
-    $hoursStmt->execute([$restaurantId, 0, 'Brunch', '10:00:00', '14:30:00', '10:00:00', '14:00:00']);
-    $hoursStmt->execute([$restaurantId, 0, 'Dinner', '17:00:00', '21:00:00', '17:00:00', '20:00:00']);
+            (?, 'cancellation_policy', 'Please cancel at least 24 hours before your appointment time.')"
+    )->execute(array_fill(0, 5, $restaurantId));
 
     $pdo->commit();
 

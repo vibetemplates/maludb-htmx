@@ -255,3 +255,43 @@ Notes:
   to be managed from the same Token Setup page (noted in the DDL file header).
 - An in-app ingest flow (replacing POST /v1/memory/ingest) can now be built on these tables —
   not in scope this round.
+
+## Plan — 2026-06-06 (Minimum database setup / install script)
+
+Confirmed with Ed: proceed with whatever is necessary.
+
+### Todo
+- [x] 1. Write `docs/sql/install.sql` — idempotent DDL for the 14 template tables (users,
+        restaurants, user_restaurants, settings, professional_profiles, professional_services,
+        professional_availability_rules, professional_time_off, professional_clients,
+        professional_appointments, todos, api_tokens, client_token, client_model_prompt),
+        faithful to the live schema incl. FKs/uniques/indexes. Header documents prerequisites
+        (create DB/schema → install maludb memory functions → run script).
+- [x] 2. Trim legacy inserts (sections, turn_times, operating_hours, affiliates) from
+        html/partials/auth/register.php and google-complete.php; slim the seeded settings to
+        keys the template actually reads.
+- [x] 3. Fix MySQL `ON DUPLICATE KEY UPDATE` → Postgres `ON CONFLICT` in
+        html/partials/settings/notifications.php.
+- [x] 4. Verify: run install.sql into a scratch schema (all 14 tables created); php -l all
+        changed files.
+- [x] 5. docs/activity.md, commit, push.
+
+### Review
+
+`docs/sql/install.sql` defines the full minimum footprint: 14 tables (auth/tenancy 4,
+profile 1, scheduling 5, todos 1, api_tokens 1, maludb-client 2), faithful to the live DDL
+including FKs/uniques/indexes; idempotent. No static seed rows — registration seeds per-tenant
+settings. Excluded deliberately: nav_permissions (no callers since the unified nav),
+password_resets (forgot-password is a UI shell), all maludb_* (system install), all
+restaurant/voice/SMS/affiliate legacy tables.
+
+Code fixes required for a clean fresh install:
+- register.php + google-complete.php no longer INSERT into sections/turn_times/
+  operating_hours/affiliates; settings seed slimmed 15 → 5 keys the template reads.
+  (One deviation from live: users.product_type default is 'professional' in install.sql.)
+- notifications.php: 3× MySQL ON DUPLICATE KEY UPDATE → ON CONFLICT (restaurant_id,
+  setting_key) DO UPDATE (page was broken on Postgres).
+
+Verified: install.sql executed twice into a scratch schema (14 tables, idempotent);
+registration-flow inserts, the ON CONFLICT upsert, and client token/prompt inserts all
+exercised against the fresh schema, then rolled back and schema dropped.

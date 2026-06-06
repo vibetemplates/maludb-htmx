@@ -3397,3 +3397,27 @@ that pair it with `HX-Retarget` (token-setup, model-prompts, the six memory enti
 _type-crud/_registry-crud scaffolds, attribute-templates, platform/save-affiliate). The list now
 swaps in first; the modal closes after. Files with closeModal but no HX-Retarget are unaffected
 (their swap target is resolved at request time) and were left alone.
+
+## 2026-06-06 — Minimum database setup + install script
+
+**Prompt:** "Define the minimum database setup for the installation... We need an installation script that the user will run to create the tables required by this template." (Confirmed: "Please proceed with whatever is necessary.")
+
+**Analysis:** traced every table reachable from the unified nav + auth flow (Explore agent sweep
++ live-catalog DDL extraction). Minimum = 14 tables. Excluded: nav_permissions
+(getPermittedNavItems has no callers since the nav went unified), password_resets (UI shell),
+maludb_* (system install), restaurant/voice/SMS/affiliate legacy.
+
+**Changes:**
+- New `docs/sql/install.sql` — idempotent CREATE TABLE IF NOT EXISTS for users, restaurants,
+  user_restaurants, settings, professional_profiles, professional_services,
+  professional_availability_rules, professional_time_off, professional_clients,
+  professional_appointments, todos, api_tokens, client_token, client_model_prompt; faithful to
+  live DDL (FKs, uniques, indexes); header documents prerequisites (create DB → install maludb
+  → run script → register first user).
+- register.php / google-complete.php — removed legacy inserts (sections, turn_times,
+  operating_hours, affiliates); settings seed slimmed 15 → 5 template-relevant keys.
+- notifications.php — 3× MySQL ON DUPLICATE KEY UPDATE → Postgres ON CONFLICT DO UPDATE.
+
+**Verification:** install.sql run twice into a scratch schema (14 tables, idempotent);
+simulated registration inserts + ON CONFLICT upsert + token/prompt inserts against the fresh
+schema (rolled back, schema dropped); php -l clean on all changed files.
