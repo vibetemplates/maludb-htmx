@@ -33,10 +33,7 @@ MaluDB is a *retrieval-and-provenance* system: most screens are searches, graph 
 ├── config/            # Configuration (gitignored; copy from *.sample.php)
 ├── helpers/           # Shared PHP utilities (auth, session, CSRF, db, ui, dates)
 ├── models/            # Database model classes
-├── design/            # Bootstrap 5 design reference — READ ONLY, do not modify
-├── docs/              # Documentation and activity log
-├── tasks/             # Claude Code planning documents (todo.md)
-├── sql/               # Database schema
+├── docs/              # Documentation and SQL install scripts
 └── logs/              # Application logs (gitignored)
 ```
 
@@ -53,11 +50,15 @@ MaluDB is a *retrieval-and-provenance* system: most screens are searches, graph 
 
    Fill in your database credentials and (optionally) Google OAuth credentials.
 
-3. **Create the database** and load the schema from `sql/`.
+3. **Create the database** and run the install script (creates all application tables plus a default admin):
+
+   ```bash
+   psql -h <host> -U <user> -d <db> -f docs/sql/install.sql
+   ```
 
 4. **Point Apache** at `html/` as the document root.
 
-5. **Verify** by visiting `/test-db.php` to confirm the database connection, then `/login.php`.
+5. **Verify** by visiting `/login.php` and signing in as `admin@example.com` / `admin123` — then change that password immediately.
 
 ## Working with Claude Code
 
@@ -65,7 +66,7 @@ This template is designed to be driven by Claude Code. The workflow rules live i
 
 - Plans are written to `tasks/todo.md` and verified before work begins
 - Every action is logged in `docs/activity.md`
-- The `design/` folder is the visual reference and is never modified
+- An optional local `design/` folder (your Bootstrap theme source) can be added as a visual reference; when present it is read-only and never modified
 - Changes are kept as simple as possible and pushed to git when complete
 - Every `div` in HTML files carries a unique `id` so styling changes can be requested by id
 
@@ -81,25 +82,6 @@ This template is designed to be driven by Claude Code. The workflow rules live i
 
 Rather than storing rows you overwrite, MaluDB stores *what was claimed, by whom, from what evidence, and when it was believed true* — and never silently discards a prior belief.
 
-### The memory object model
-# MaluDB Front-End Template — PHP + Bootstrap 5 + HTMX (Direct PDO)
-
-A starter template for building server-driven web front-ends on top of **MaluDB**, using **PHP** on the back end, **Bootstrap 5** for responsive component-based UI, and **HTMX** for dynamic, partial-page interactivity.
-
-This template connects to MaluDB **directly over the PostgreSQL wire protocol using PHP's PDO driver** (`ext-pdo` + `ext-pdo_pgsql`) — it calls MaluDB's SQL / PL-pgSQL functions in-database. There is **no REST/API layer** in this template. (A separate sibling template targets the same UI stack but connects through the `maludb-restd` HTTP API instead — use that one when your front end can't open a direct database connection.)
-
-Screens that browse, search, and curate memory render as Bootstrap-styled HTML fragments served straight from PHP; HTMX swaps them into the page on demand. The result is a fast, accessible, progressively-enhanced UI with no heavy client-side framework to maintain.
-## Why this stack fits MaluDB
-
-MaluDB is a *retrieval-and-provenance* system: most screens are searches, graph traversals, and record reviews that map naturally to "ask the database, render the result." PHP + PDO calls MaluDB's functions directly — `text_search`, `execute_retrieval`, `replay_episode`, the `register_*` ingest helpers — and HTMX turns the responses into small, attribute-driven round-trips: live search, expanding an episode into its supporting evidence, paging a traversal, confirming a correction. Because the connection is a plain PostgreSQL session, the app runs under a real database role and inherits MaluDB's row-level-security and authorization model for free.
-
----
-
-## About MaluDB (the platform)
-
-**MaluDB is a memory DBMS** — a database purpose-built for long-term institutional memory, human–AI knowledge sharing, and contextual recall. It is written in **C as a set of PostgreSQL extensions** (the `maludb_core` extension plus companion daemons) and ships as a single managed installation on **Ubuntu 24.04 LTS** with **PostgreSQL 17**, bundling `pgvector`, `pgaudit`, and `pg_partman` so operators don't provision PostgreSQL by hand.
-
-Rather than storing rows you overwrite, MaluDB stores *what was claimed, by whom, from what evidence, and when it was believed true* — and never silently discards a prior belief.
 ### The memory object model
 
 Knowledge flows through a typed pipeline, each stage carrying provenance:
