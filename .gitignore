@@ -10,7 +10,8 @@ logs/*
 .claude/settings.local.json
 
 # Composer dependencies (run `composer install` on deploy)
-vendor/
+# (root-anchored: html/assets/vendor/ are committed theme assets)
+/vendor/
 
 # OS files
 .DS_Store

@@ -3499,3 +3499,16 @@ inert on an image. Browser title left as-is (titles cannot hold images).
 **Phase B:** secrets scan of tracked tree — config/config.php is env-based (clean); FullCalendar public demo API key found in theme vendor calendar demos (html/assets + assets_home, unreferenced) → replaced with YOUR_GOOGLE_API_KEY placeholder (design/ copy untouched per CLAUDE.md rule 2); remaining scan hits verified false positives. Ed decided design/ (commercial Kobie theme source) is EXCLUDED from the public release for license safety. Found and removed three stray root files during export review (contact.php theme demo, sql/multi-language-relay.sql, utils/error-log-viewer.php); fixed README (deduped spliced sections, install steps now point at docs/sql/install.sql + seeded admin, removed references to deleted files and design/).
 
 **Released:** git archive HEAD minus tasks/, design/, docs/activity.md → fresh git repo, single "Initial release" commit (507 files), pushed to maludb/native-lamp-vibetemplate main @ 6aa12df. (Push from /tmp failed — credential helper would not engage outside /var/www — so the release commit was fetched into the working repo and pushed from there; temp branch and staging dir removed.) This working repo (vibetemplates/maludb-htmx) keeps full history and the excluded artifacts.
+
+## 2026-06-07 — Sidenav scroll fix (Option A) + vendor gitignore root cause
+
+**Prompt:** "After pushing the repo, I installed it on another server and had a problem ... Please make the option A fix" (sidenav has no scrollbar; vendor scrollbar library files missing on the new install).
+
+**Findings:**
+- Theme rule `.nxl-navigation .navbar-content` sets `height: calc(100vh - 80px)` with no overflow; the OverlayScrollbars JS targets `.sidebarMenuScroll`, a class `app.php` never uses — so the sidenav never scrolled on any server once the menu outgrew the viewport.
+- Root cause of the missing `assets/vendor/` on the new install: `.gitignore` line `vendor/` (unanchored, intended for Composer) also matches `html/assets/vendor/`. In this repo those files were tracked before the rule existed, but a fresh copy into the public template repo silently excluded them.
+
+**Changes:**
+- `html/assets/css/kobie-custom.css` — added `.nxl-navigation .navbar-content { overflow-y: auto; }` (native scrollbar, no new dependencies; no plugin conflict since the plugin never attaches to this element).
+- `.gitignore` — anchored the Composer rule to `/vendor/` so `html/assets/vendor/` is no longer ignored in future copies/releases.
+- Kept the four vendor `<link>`/`<script>` references in `app.php`: the files exist and are tracked in this repo; with the gitignore fix they will reach future template pushes too.

@@ -265,3 +265,12 @@
 .table td .btn {
     display: inline-flex;
 }
+
+/* Sidenav scrolling: the theme gives .navbar-content a fixed height
+   (calc(100vh - 80px)) but no overflow, relying on an OverlayScrollbars
+   JS scrollbar that is never attached to this element (it targets
+   .sidebarMenuScroll, which app.php does not use). Provide a native
+   scrollbar so a tall menu is reachable. */
+.nxl-navigation .navbar-content {
+    overflow-y: auto;
+}
